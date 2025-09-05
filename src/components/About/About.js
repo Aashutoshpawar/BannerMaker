@@ -1,16 +1,14 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const Draft = () => {
+const About = () => {
     return (
         <View>
-            <View >
-                <Text >draft Screen</Text>
-            </View>
+            <Text>About Page</Text>
         </View>
     );
 }
 
 const styles = StyleSheet.create({})
 
-export default Draft;
+export default About;

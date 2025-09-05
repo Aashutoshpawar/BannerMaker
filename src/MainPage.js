@@ -1,16 +1,16 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const Draft = () => {
+const MainPage = () => {
     return (
         <View>
-            <View >
-                <Text >draft Screen</Text>
-            </View>
+            <Text>
+                this is main page 
+            </Text>
         </View>
     );
 }
 
 const styles = StyleSheet.create({})
 
-export default Draft;
+export default MainPage;
