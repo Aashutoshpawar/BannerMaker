@@ -1,11 +1,23 @@
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { enableScreens } from 'react-native-screens';
+import { StatusBar } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import StackNavigator from './src/navigators/StackNavigator';
 
 function App() {
+  enableScreens(); // must be called before navigation
   return (
     <SafeAreaProvider>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="white"
+      />
       <SafeAreaView style={styles.container}>
-        <Text style={{ color: 'black' }}>Hello</Text>
+        <NavigationContainer>
+          <StackNavigator />
+        </NavigationContainer>
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -14,7 +26,7 @@ function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white', 
+    backgroundColor: 'white',
   },
 });
 
