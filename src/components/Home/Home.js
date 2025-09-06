@@ -1,16 +1,15 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {Text, View } from 'react-native';
+import styles from "./home.css"
 
 const Home = () => {
     return (
         <View>
             <View >
-      <Text >home Screen</Text>
-    </View>
+                <Text style={styles.text}>home Screen</Text>
+            </View>
         </View>
     );
 }
-
-const styles = StyleSheet.create({})
 
 export default Home;
