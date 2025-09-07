@@ -9,6 +9,7 @@ import About from '../components/About/About';
 import BottomTabNavigator from './BottomTabNavigator';
 import MainPage from '../MainPage';
 import Signup from '../components/Login/Signup';
+import AdminLogin from '../components/Login/AdminLogin';
 
 const Stack = createStackNavigator();
 
@@ -28,6 +29,8 @@ const StackNavigator = () => {
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="MainPage" component={MainPage} />
       <Stack.Screen name="Signup" component={Signup} />
+      <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} />
+      <Stack.Screen name="AdminLogin" component={AdminLogin} />
     </Stack.Navigator>
   );
 };
