@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 export default StyleSheet.create({
   screenContainer: {
@@ -10,10 +10,10 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
   header: {
-    fontSize: 20,
+    fontSize: 28,
     fontFamily: 'OpenSans',
     fontWeight: 'bold',
-    
+    marginBottom: 20,
   },
   floatingBtn: {
     borderWidth: 1,
@@ -21,10 +21,10 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: 60,
+    height: 60,
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 20 : 5,
-    right: 10,
-    height: 60,
+    right: 20,
     backgroundColor: '#3c91ecff',
     borderRadius: 100,
     shadowColor: '#000',
@@ -33,9 +33,53 @@ export default StyleSheet.create({
     shadowRadius: 2,
     elevation: 20,
     flexDirection: 'row',
-    bottom: -700,
-    right: 20,
-    
-    
+  },
+  container: {
+    flex: 1,
+    padding: 15,
+    backgroundColor: '#fff',
+  },
+  categoryContainer: {
+    marginBottom: 25,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  categoryTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  seeMore: {
+    fontSize: 14,
+    color: '#007BFF',
+  },
+  templateTile: {
+    marginRight: 10,
+    borderRadius: 10,
+    overflow: 'hidden',
+    width: 100,
+    height: 150,
+    backgroundColor: '#55bdd4ff',
+  },
+  templateImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  moreTile: {
+    width: 100,
+    height: 150,
+    backgroundColor: '#55bdd4ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  moreText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
 });

@@ -1,42 +1,15 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
-
+import Ionicons from "react-native-vector-icons/Ionicons";
+import SimpleLineIcons from "react-native-vector-icons/SimpleLineIcons";
+import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Home from "../components/Home/Home";
 import Create from "../components/Create/Create";
 import Draft from "../components/Draft/Draft";
 import About from "../components/About/About";
 
 const Tab = createBottomTabNavigator();
-const AnimatedFontAwesome5 = Animated.createAnimatedComponent(FontAwesome5);
-
-// 🔹 Animated Icon Component
-const AnimatedIcon = ({ name, color, focused }) => {
-  const scale = useSharedValue(focused ? 1.2 : 1);
-
-  useEffect(() => {
-    scale.value = withSpring(focused ? 1.2 : 1);
-  }, [focused]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <AnimatedFontAwesome5
-      name={name}
-      color={color}
-      size={22}
-      style={animatedStyle}
-      solid
-    />
-  );
-};
 
 const BottomTabNavigator = () => {
   return (
@@ -52,8 +25,8 @@ const BottomTabNavigator = () => {
         name="Home"
         component={Home}
         options={{
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedIcon name="home" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" color={color} size={25} />
           ),
         }}
       />
@@ -61,8 +34,8 @@ const BottomTabNavigator = () => {
         name="Create"
         component={Create}
         options={{
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedIcon name="plus-circle" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <SimpleLineIcons name="plus" color={color} size={25} solid />
           ),
         }}
       />
@@ -70,8 +43,8 @@ const BottomTabNavigator = () => {
         name="Draft"
         component={Draft}
         options={{
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedIcon name="file-alt" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <MaterialDesignIcons name="circle-edit-outline" color={color} size={25} solid />
           ),
         }}
       />
@@ -79,8 +52,8 @@ const BottomTabNavigator = () => {
         name="Setting"
         component={About}
         options={{
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedIcon name="cog" color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings-outline" color={color} size={25} solid />
           ),
         }}
       />
