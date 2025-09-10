@@ -1,13 +1,15 @@
 import React from 'react';
-import {Text, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import styles from "./home.css"
 
-const Home = () => {
+
+const Home = ({navigation}) => {
     return (
         <View>
             <View >
-                <Text style={styles.text}>home Screen</Text>
+                <Text style={styles.header}>Poster Maker Pro</Text>
             </View>
+          
         </View>
     );
 }
