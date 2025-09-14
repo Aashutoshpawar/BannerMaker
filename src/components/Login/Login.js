@@ -1,55 +1,50 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View, Button, Text, TouchableOpacity } from 'react-native';
-
+import { StyleSheet, TextInput, View, Text, TouchableOpacity } from 'react-native';
+import styles from './login.css';
 const Login = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Welcome Back</Text>
+
       <TextInput
         placeholder="Username"
+        placeholderTextColor="#888"
         style={styles.input}
         onChangeText={setUsername}
+        value={username}
       />
+
       <TextInput
         placeholder="Password"
+        placeholderTextColor="#888"
         style={styles.input}
         secureTextEntry
         onChangeText={setPassword}
+        value={password}
       />
-      {/* <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-        <Text style={{ color: 'blue', marginBottom: 20 }}>Forgot Password?</Text>
+
+      {/* Uncomment if you want Forgot Password link */}
+      {/* <TouchableOpacity>
+        <Text style={styles.forgotPassword}>Forgot Password?</Text>
       </TouchableOpacity> */}
-      <Button
-        title="Login"
-        onPress={() => {
-          // ✅ replace so user can't go back to login
-          navigation.replace('MainPage');  
-        }}
-      />
+
+      <TouchableOpacity
+        style={styles.loginButton}
+        onPress={() => navigation.replace('MainPage')}
+      >
+        <Text style={styles.loginButtonText}>Login</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-        <Text style={{ color: 'blue', marginTop: 20 }}>Don't have an account? Sign Up</Text>
+        <Text style={styles.signupText}>
+          Don't have an account? <Text style={styles.signupLink}>Sign Up</Text>
+        </Text>
       </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-  },
-  input: {
-    height: 40,
-    marginBottom: 12,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    width: 250,
-    color: 'black',
-  },
-});
 
 export default Login;
