@@ -13,6 +13,7 @@ function App() {
       <StatusBar
         barStyle="dark-content"
         backgroundColor="white"
+        hidden={false}
       />
       <SafeAreaView style={styles.container}>
         <NavigationContainer>
