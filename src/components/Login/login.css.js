@@ -4,14 +4,35 @@ export default StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 20,
   },
+  subcontainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop:250,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 40,
+    color: '#333',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginVertical: 20,
+    color: '#333',
+    textAlign: 'center',
+  },
+  inputWrapper: {
+    width: '100%',
+    marginTop: 20,
+  },
+  header: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
     color: '#333',
   },
   input: {
@@ -24,37 +45,9 @@ export default StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
-    color: '#007BFF',
-    fontSize: 14,
-  },
-  loginButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#3c91ec',
-    borderRadius: 12,
-    justifyContent: 'center',
+  buttonWrapper: {
+    marginTop: 10,
     alignItems: 'center',
-    marginBottom: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  signupText: {
-    fontSize: 14,
-    color: '#555',
-  },
-  signupLink: {
-    color: '#3c91ec',
-    fontWeight: 'bold',
+    width: '100%',
   },
 });

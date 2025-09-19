@@ -1,115 +1,85 @@
-import React from 'react';
-import { View, Text, FlatList, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useCallback, memo } from 'react';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import FastImage from 'react-native-fast-image'; // 🚀 better for caching
 import styles from './home.css';
+import { imageMap } from '../../assets/templates/imageMap';
+import templateData from '../../assets/templates/templates.json';
 
-// Solid colors for each category
 const categoryColors = {
-  Birthday: '#FF9AA2',
-  Festival: '#FFB347',
-  Wedding: '#D5AAFF',
-  Business: '#4DD0E1',
-  Travel: '#FFD54F',
-  Education: '#90CAF9',
+  Dhanteras: '#FF9AA2',
+  Diwali: '#FFB347',
+  Holi: '#D5AAFF',
+  Good_Friday: '#4DD0E1',
+  Gudi_Padwa: '#FFD54F',
 };
 
-// Sample template data
-const templateData = [
-  {
-    id: '1',
-    category: 'Birthday',
-    templates: [
-      { id: 'b1', image: 'https://via.placeholder.com/100x150.png?text=B1' },
-      { id: 'b2', image: 'https://via.placeholder.com/100x150.png?text=B2' },
-      { id: 'b3', image: 'https://via.placeholder.com/100x150.png?text=B3' },
-      { id: 'b4', image: 'https://via.placeholder.com/100x150.png?text=B4' },
-      { id: 'b5', image: 'https://via.placeholder.com/100x150.png?text=B5' },
-    ],
-  },
-  {
-    id: '2',
-    category: 'Festival',
-    templates: [
-      { id: 'f1', image: 'https://via.placeholder.com/100x150.png?text=F1' },
-      { id: 'f2', image: 'https://via.placeholder.com/100x150.png?text=F2' },
-      { id: 'f3', image: 'https://via.placeholder.com/100x150.png?text=F3' },
-      { id: 'f4', image: 'https://via.placeholder.com/100x150.png?text=F4' },
-      { id: 'f5', image: 'https://via.placeholder.com/100x150.png?text=F5' },
-    ],
-  },
-  {
-    id: '3',
-    category: 'Wedding',
-    templates: [
-      { id: 'w1', image: 'https://via.placeholder.com/100x150.png?text=W1' },
-      { id: 'w2', image: 'https://via.placeholder.com/100x150.png?text=W2' },
-      { id: 'w3', image: 'https://via.placeholder.com/100x150.png?text=W3' },
-      { id: 'w4', image: 'https://via.placeholder.com/100x150.png?text=W4' },
-      { id: 'w5', image: 'https://via.placeholder.com/100x150.png?text=W5' },
-    ],
-  },
-  {
-    id: '4',
-    category: 'Business',
-    templates: [
-      { id: 'bu1', image: 'https://via.placeholder.com/100x150.png?text=BU1' },
-      { id: 'bu2', image: 'https://via.placeholder.com/100x150.png?text=BU2' },
-      { id: 'bu3', image: 'https://via.placeholder.com/100x150.png?text=BU3' },
-      { id: 'bu4', image: 'https://via.placeholder.com/100x150.png?text=BU4' },
-      { id: 'bu5', image: 'https://via.placeholder.com/100x150.png?text=BU5' },
-    ],
-  },
-  {
-    id: '5',
-    category: 'Travel',
-    templates: [
-      { id: 't1', image: 'https://via.placeholder.com/100x150.png?text=T1' },
-      { id: 't2', image: 'https://via.placeholder.com/100x150.png?text=T2' },
-      { id: 't3', image: 'https://via.placeholder.com/100x150.png?text=T3' },
-      { id: 't4', image: 'https://via.placeholder.com/100x150.png?text=T4' },
-      { id: 't5', image: 'https://via.placeholder.com/100x150.png?text=T5' },
-    ],
-  },
-  {
-    id: '6',
-    category: 'Education',
-    templates: [
-      { id: 'e1', image: 'https://via.placeholder.com/100x150.png?text=E1' },
-      { id: 'e2', image: 'https://via.placeholder.com/100x150.png?text=E2' },
-      { id: 'e3', image: 'https://via.placeholder.com/100x150.png?text=E3' },
-      { id: 'e4', image: 'https://via.placeholder.com/100x150.png?text=E4' },
-      { id: 'e5', image: 'https://via.placeholder.com/100x150.png?text=E5' },
-    ],
-  },
-];
-
-const Home = ({ navigation }) => {
-  const renderTemplate = (item, category) => (
+// ✅ Template Card (memoized to prevent re-rendering)
+const TemplateTile = memo(({ item, category, navigation }) => {
+  const bg = categoryColors[category] || '#ccc';
+  return (
     <TouchableOpacity
-      style={[styles.templateTile, { backgroundColor: categoryColors[category] || '#ccc' }]}
-      onPress={() => alert(`Selected ${item.id}`)}
+      style={[styles.templateTile, { backgroundColor: bg }]}
+      onPress={() =>
+        navigation.navigate('PreviewTemplate', {
+          template: { ...item, image: imageMap[item.image] }, // 👈 pass actual image source
+        })
+      }
+
     >
-      <Image source={{ uri: item.image }} style={styles.templateImage} />
+      {imageMap[item.image] ? (
+        <FastImage
+          source={imageMap[item.image]}
+          style={styles.templateImage}
+          resizeMode={FastImage.resizeMode.contain}
+        />
+      ) : (
+        <Text style={{ color: '#000' }}>Missing {item.image}</Text>
+      )}
     </TouchableOpacity>
   );
+});
 
-  const renderCategory = ({ item }) => (
-    <View style={styles.categoryContainer}>
-      <View style={styles.categoryHeader}>
-        <Text style={styles.categoryTitle}>{item.category}</Text>
-        <TouchableOpacity onPress={() => alert(`See more ${item.category}`)}>
-          <Text style={styles.seeMore}>See More</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {item.templates.map((t) => renderTemplate(t, item.category))}
-        <TouchableOpacity
-          style={[styles.moreTile, { backgroundColor: categoryColors[item.category] || '#ccc' }]}
-          onPress={() => alert(`See more ${item.category}`)}
-        >
-          <Text style={styles.moreText}>+1</Text>
-        </TouchableOpacity>
-      </ScrollView>
+// ✅ Horizontal list for templates
+const TemplateRow = memo(({ templates, category, navigation }) => {
+  const renderItem = useCallback(
+    ({ item }) => (
+      <TemplateTile item={item} category={category} navigation={navigation} />
+    ),
+    [category, navigation]
+  );
+
+  return (
+    <FlatList
+      horizontal
+      data={templates}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.id}
+      showsHorizontalScrollIndicator={false}
+      initialNumToRender={3}
+      maxToRenderPerBatch={5}
+      windowSize={5}
+    />
+  );
+});
+
+// ✅ Category Section
+const CategorySection = memo(({ item, navigation }) => (
+  <View style={styles.categoryContainer}>
+    <View style={styles.categoryHeader}>
+      <Text style={styles.categoryTitle}>{item.category}</Text>
+      <TouchableOpacity onPress={() => alert(`See more ${item.category}`)}>
+        <Text style={styles.seeMore}>See More</Text>
+      </TouchableOpacity>
     </View>
+
+    <TemplateRow templates={item.templates} category={item.category} navigation={navigation} />
+  </View>
+));
+
+const Home = ({ navigation }) => {
+  const renderCategory = useCallback(
+    ({ item }) => <CategorySection item={item} navigation={navigation} />,
+    [navigation]
   );
 
   return (
@@ -120,6 +90,10 @@ const Home = ({ navigation }) => {
         renderItem={renderCategory}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={2}
+        maxToRenderPerBatch={3}
+        windowSize={5}
+        removeClippedSubviews
       />
     </View>
   );

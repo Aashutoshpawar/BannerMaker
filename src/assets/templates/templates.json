@@ -1,0 +1,156 @@
+[
+  {
+    "id": "1",
+    "category": "Dhanteras",
+    "templates": [
+      {
+        "id": "Dhanteras_1",
+        "image": "Dhanteras/0qRzLkB1xBNkXiFtfWxD41ztakz9FTxLbs3KFMax.jpg"
+      },
+      {
+        "id": "Dhanteras_2",
+        "image": "Dhanteras/1i58BW3MypFCjCOIya2TBET72RC1TNfv8NO4lEDH.jpg"
+      },
+      {
+        "id": "Dhanteras_3",
+        "image": "Dhanteras/3COJouG3sS1LoKOvYPOAvpaagCQwzkn1cbfLXyQ5.png"
+      },
+      {
+        "id": "Dhanteras_4",
+        "image": "Dhanteras/4g1POu9QSSKDxzslCerulOc2HLgJLPvAlQsRaGvi.jpg"
+      },
+      {
+        "id": "Dhanteras_5",
+        "image": "Dhanteras/b8NCUHQ7gTIlqHCUohPk6kkK7FgkGwybJYQB1ETg.jpg"
+      },
+      {
+        "id": "Dhanteras_6",
+        "image": "Dhanteras/BYt41Ose2yJyWMZrAwvWyawMtcoViieK6eBd8zdx.png"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "category": "Diwali",
+    "templates": [
+      {
+        "id": "Diwali_1",
+        "image": "Diwali/2sYIuGr1604500496.png"
+      },
+      {
+        "id": "Diwali_2",
+        "image": "Diwali/4WJ4uVp1604500496.png"
+      },
+      {
+        "id": "Diwali_3",
+        "image": "Diwali/5Sbb7oJZIwV6WUsIUuulqEufLT8lbeNvp9UGgZwk.jpg"
+      },
+      {
+        "id": "Diwali_4",
+        "image": "Diwali/axwqLg7DCErO8TkkcMfL7MWgf2NfXX5wngLRnlSd.jpg"
+      },
+      {
+        "id": "Diwali_5",
+        "image": "Diwali/hiud3p71604500496.png"
+      },
+      {
+        "id": "Diwali_6",
+        "image": "Diwali/hMceBjUz4wkGNra432TQYwMkJh0uFlrZCc6TJM47.jpg"
+      },
+      {
+        "id": "Diwali_7",
+        "image": "Diwali/LxtHnxbcqi9oM4LfSsAHowRkR9nRjuHGwUPgHUuA.jpg"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "category": "Good_Friday",
+    "templates": [
+      {
+        "id": "Good_Friday_1",
+        "image": "Good_Friday/2ggwDYalCX2m1HYQMYd4TsZl6scLqALWjuf71KVr.png"
+      },
+      {
+        "id": "Good_Friday_2",
+        "image": "Good_Friday/2jSQ8MhepO8ctUdBlHpSxGtfTkhuHINTafGK1sRK.png"
+      },
+      {
+        "id": "Good_Friday_3",
+        "image": "Good_Friday/2RXpW7HnrYk0qZDQobShMenVsAVtKDvhFGxpXnJY.png"
+      },
+      {
+        "id": "Good_Friday_4",
+        "image": "Good_Friday/avtZ0Kb1616831010.png"
+      },
+      {
+        "id": "Good_Friday_5",
+        "image": "Good_Friday/CFcMRvU1616831010.png"
+      },
+      {
+        "id": "Good_Friday_6",
+        "image": "Good_Friday/i0FOQoj1616831010.png"
+      }
+    ]
+  },
+  {
+    "id": "4",
+    "category": "Gudi_Padwa",
+    "templates": [
+      {
+        "id": "Gudi_Padwa_1",
+        "image": "Gudi_Padwa/glUnkcl1618030490.png"
+      },
+      {
+        "id": "Gudi_Padwa_2",
+        "image": "Gudi_Padwa/jdH2FSo1618030491.png"
+      },
+      {
+        "id": "Gudi_Padwa_3",
+        "image": "Gudi_Padwa/la8OCax1618030491.png"
+      },
+      {
+        "id": "Gudi_Padwa_4",
+        "image": "Gudi_Padwa/mamnGOp1618030491.png"
+      },
+      {
+        "id": "Gudi_Padwa_5",
+        "image": "Gudi_Padwa/QJtYLwG1618030490.png"
+      },
+      {
+        "id": "Gudi_Padwa_6",
+        "image": "Gudi_Padwa/SztFKsd1618030490.png"
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "category": "Holi",
+    "templates": [
+      {
+        "id": "Holi_1",
+        "image": "Holi/39nUkXOgBs32f3QwZzsOthSSAqCG4uUMj5HsF4t0.png"
+      },
+      {
+        "id": "Holi_2",
+        "image": "Holi/3dMxSAGzTn6QPQT30Jo3Ps5QiQ7n53j2WNXK0YjM.png"
+      },
+      {
+        "id": "Holi_3",
+        "image": "Holi/4opKE1RzpHo99eYgulko3ZMG45n6yjDswtzePIuI.png"
+      },
+      {
+        "id": "Holi_4",
+        "image": "Holi/gZXEvnTV7Qy1fHeG6p2yFazW5KqtG949NliqnRtf.png"
+      },
+      {
+        "id": "Holi_5",
+        "image": "Holi/HgAWNBA1616565855.png"
+      },
+      {
+        "id": "Holi_6",
+        "image": "Holi/k5KYsMRMjlSaqN9glOv3jOCuW0hc48LJKmjk7Gw8.png"
+      }
+    ]
+  }
+]

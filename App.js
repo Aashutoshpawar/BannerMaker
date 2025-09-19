@@ -7,7 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import StackNavigator from './src/navigators/StackNavigator';
 
 function App() {
-  enableScreens(); // must be called before navigation
+  enableScreens(true); // must be called before navigation
   return (
     <SafeAreaProvider>
       <StatusBar

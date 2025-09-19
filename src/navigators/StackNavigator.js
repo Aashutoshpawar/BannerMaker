@@ -8,8 +8,10 @@ import Draft from '../components/Draft/Draft';
 import About from '../components/About/About';
 import BottomTabNavigator from './BottomTabNavigator';
 import MainPage from '../MainPage';
-import Signup from '../components/Login/Signup';
-import AdminLogin from '../components/Login/AdminLogin';
+import PreviewTemplate from '../components/Home/PreviewTemplate/PreviewTemplate';
+import Crop from '../components/Create/Crop/Crop';
+import Canvas from '../components/Canvas/Canvas';
+import OtpScreen from '../components/Login/OtpScreen';
 
 const Stack = createStackNavigator();
 
@@ -18,9 +20,9 @@ const StackNavigator = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {/* First screen → Login */}
       <Stack.Screen name="Login" component={Login} />
-
       {/* After login, show Bottom Tabs */}
       {/* <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator}></Stack.Screen> */}
+      <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} />
 
       {/* Extra screens (stack pushable) */}
       <Stack.Screen name="Home" component={Home} />
@@ -28,9 +30,10 @@ const StackNavigator = () => {
       <Stack.Screen name="Draft" component={Draft} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="MainPage" component={MainPage} />
-      <Stack.Screen name="Signup" component={Signup} />
-      <Stack.Screen name="BottomTabNavigator" component={BottomTabNavigator} />
-      <Stack.Screen name="AdminLogin" component={AdminLogin} />
+      <Stack.Screen name="PreviewTemplate" component={PreviewTemplate} />
+      <Stack.Screen name="Crop" component={Crop} />
+      <Stack.Screen name="Canvas" component={Canvas} />
+      <Stack.Screen name='OTPScreen' component={OtpScreen} />
     </Stack.Navigator>
   );
 };
