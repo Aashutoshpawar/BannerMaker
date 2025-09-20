@@ -22,6 +22,11 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import Evilcons from "react-native-vector-icons/EvilIcons";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import Octicons from "react-native-vector-icons/Octicons";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const Canvas = () => {
   const route = useRoute();
@@ -59,7 +64,7 @@ const Canvas = () => {
     setStickers(last.stickers);
     setTexts(last.texts);
     setBackground(last.background);
-    setHistory(history.slice(0, -1));
+    setHistory(history.slice(0, -1))
   };
 
   const redo = () => {
@@ -316,8 +321,8 @@ const Canvas = () => {
         >
           <FontAwesome5 name="arrow-left" size={20} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Canvas Editor</Text>
-        <View style={styles.controls}>
+        <Text style={styles.headerTitle}></Text>
+        <View style={styles.topcontrols}>
           <TouchableOpacity style={styles.button} onPress={undo}>
             <Evilcons name="undo" size={30} color="black" />
           </TouchableOpacity>
@@ -365,6 +370,7 @@ const Canvas = () => {
 
       {/* Controls */}
       <View style={styles.controls}>
+        {/* Add Text */}
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
@@ -373,9 +379,11 @@ const Canvas = () => {
             bottomSheetRef.current?.expand(); // open bottom sheet
           }}
         >
-          <Text>Add Text</Text>
+          <MaterialDesignIcons name="format-textbox" size={28} color="black" />
+          <Text style={styles.buttonText}>Text</Text>
         </TouchableOpacity>
 
+        {/* Add Sticker */}
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
@@ -393,11 +401,42 @@ const Canvas = () => {
             ]);
           }}
         >
-          <Text>Add Sticker</Text>
+          <MaterialDesignIcons name="sticker-emoji" size={28} color="black" />
+          <Text style={styles.buttonText}>Sticker</Text>
         </TouchableOpacity>
 
+        {/* Upload Image */}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            launchImageLibrary({ mediaType: "photo" }, (res) => {
+              if (!res.didCancel && res.assets?.length > 0) {
+                const uri = res.assets[0].uri;
+                if (uri) {
+                  pushToHistory();
+                  setStickers((prev) => [
+                    ...prev,
+                    {
+                      uri,
+                      x: displayWidth / 2 - 50,
+                      y: displayHeight / 2 - 50,
+                      scale: 1,
+                      rotation: 0,
+                    },
+                  ]);
+                }
+              }
+            });
+          }}
+        >
+          <Ionicons name="image-outline" size={28} color="black" />
+          <Text style={styles.buttonText}>Upload</Text>
+        </TouchableOpacity>
+
+        {/* Change Background */}
         <TouchableOpacity style={styles.button} onPress={pickBackground}>
-          <Text>Change BG</Text>
+          <MaterialDesignIcons name="texture-box" size={26} color="black" />
+          <Text style={styles.buttonText}>Background</Text>
         </TouchableOpacity>
       </View>
 
@@ -466,6 +505,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
+    backgroundColor: "#fff",
+    elevation: 4,
   },
   backButton: { padding: 5 },
   headerTitle: {
@@ -487,6 +528,8 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     overflow: "hidden",
+      elevation: 8, 
+
   },
   backgroundImage: {
     width: "100%",
@@ -495,12 +538,30 @@ const styles = StyleSheet.create({
   },
   controls: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-evenly",
+    backgroundColor: "#ffffff",
     padding: 10,
+    paddingHorizontal: 0,
+    borderRadius: 15,
+    elevation: 10,
+    marginBottom: 10,
+    marginHorizontal: 10,
+  },
+  topcontrols: {
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
   button: {
+    alignItems: "center",   // centers icon + text horizontally
+    justifyContent: "center",
     paddingHorizontal: 10,
     borderRadius: 6,
+  },
+  buttonText: {
+    marginTop: 4,           // small space between icon & text
+    fontSize: 12,
+    color: "#000",
+    textAlign: "center",
   },
   textInput: {
     borderWidth: 1,

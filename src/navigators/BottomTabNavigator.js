@@ -2,6 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import Octicons from "react-native-vector-icons/Octicons";
 import SimpleLineIcons from "react-native-vector-icons/SimpleLineIcons";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Home from "../components/Home/Home";
@@ -26,7 +27,7 @@ const BottomTabNavigator = () => {
         component={Home}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="home-outline" color={color} size={25} />
+            <Octicons name="home" color={color} size={25} />
           ),
         }}
       />

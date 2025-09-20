@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Linking, Share, ScrollView, Modal, FlatList } from 'react-native';
 import FontAwesome5Icon from 'react-native-vector-icons/FontAwesome5';
+import GradientButton from '../../constatnts/GradientButton';
+import LinearGradient from "react-native-linear-gradient";
+
 
 const languages = [
     { id: 'en', title: 'English' },
@@ -30,68 +33,83 @@ const About = ({ navigation }) => {
         { id: '5', title: 'Terms of Service', icon: 'file-contract', onPress: () => Linking.openURL('https://yourapp.com/terms') },
         { id: '6', title: 'Contact Us', icon: 'envelope', onPress: () => Linking.openURL('mailto:support@yourapp.com') },
     ];
-
+    const GradientBorderCircle = ({ children }) => (
+        <LinearGradient
+            colors={['#4B0082', '#FF1493', '#FF8C00']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.gradientBorder}
+        >
+            <View style={styles.innerCircle}>
+                {children}
+            </View>
+        </LinearGradient>
+    );
     const renderOption = (option) => (
         <TouchableOpacity key={option.id} style={styles.option} onPress={option.onPress}>
-            <View style={styles.iconCircle}>
-                <FontAwesome5Icon name={option.icon} size={16} color="#fff" />
-            </View>
+            <GradientBorderCircle>
+                <FontAwesome5Icon name={option.icon} size={16} color="#12110D" />
+            </GradientBorderCircle>
             <Text style={styles.optionText}>{option.title}</Text>
         </TouchableOpacity>
     );
 
+
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            {/* Header */}
-            <Text style={styles.header}>Settings</Text>
+        <>
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+                <Text style={styles.header}>Settings</Text>
 
-            {/* App Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>App</Text>
-                {settingsOptions.map(renderOption)}
-            </View>
+                {/* Header */}
 
-            {/* Support Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Support</Text>
-                {supportOptions.map(renderOption)}
-            </View>
-
-            {/* Logout */}
-            <TouchableOpacity style={styles.logoutButton} onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.logoutText}>Log out</Text>
-            </TouchableOpacity>
-
-            {/* Language Modal */}
-            <Modal visible={modalVisible} transparent animationType="slide">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>Select Language</Text>
-                        <FlatList
-                            data={languages}
-                            keyExtractor={(item) => item.id}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[
-                                        styles.languageOption,
-                                        selectedLang === item.title && styles.languageSelected,
-                                    ]}
-                                    onPress={() => {
-                                        setSelectedLang(item.title);
-                                        setModalVisible(false);
-                                    }}
-                                >
-                                    <Text style={styles.languageText}>{item.title}</Text>
-                                </TouchableOpacity>
-                            )}
-                        />
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.closeText}>Cancel</Text>
-                        </TouchableOpacity>
-                    </View>
+                {/* App Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>App</Text>
+                    {settingsOptions.map(renderOption)}
                 </View>
-            </Modal>
-        </ScrollView>
+
+                {/* Support Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Support</Text>
+                    {supportOptions.map(renderOption)}
+                </View>
+
+                {/* Logout */}
+                <TouchableOpacity style={styles.logoutButton} onPress={() => navigation.navigate('Login')}>
+                    <GradientButton title="Log out" onPress={() => navigation.navigate('Login')} />
+                </TouchableOpacity>
+
+                {/* Language Modal */}
+                <Modal visible={modalVisible} transparent animationType="slide">
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>Select Language</Text>
+                            <FlatList
+                                data={languages}
+                                keyExtractor={(item) => item.id}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.languageOption,
+                                            selectedLang === item.title && styles.languageSelected,
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedLang(item.title);
+                                            setModalVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.languageText}>{item.title}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.closeText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+            </ScrollView>
+        </>
     );
 };
 
@@ -99,8 +117,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f9fafb',
-        paddingHorizontal: 20,
-        paddingTop: 40,
+        // paddingHorizontal: 20,
+        padding: 15,
     },
     header: {
         fontSize: 28,
@@ -133,6 +151,7 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#e5e7eb',
+
     },
     iconCircle: {
         width: 32,
@@ -153,7 +172,6 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         alignItems: 'center',
         borderRadius: 12,
-        backgroundColor: '#3c91ec',
     },
     logoutText: {
         fontSize: 16,
@@ -203,6 +221,23 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         fontWeight: '600',
+    },
+    gradientBorder: {
+        width: 36,         // slightly bigger for border effect
+        height: 36,
+        borderRadius: 18,
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+        padding: 2,        // thickness of the gradient border
+    },
+    innerCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: "#fff", // inside color
+        alignItems: "center",
+        justifyContent: "center",
     },
 });
 

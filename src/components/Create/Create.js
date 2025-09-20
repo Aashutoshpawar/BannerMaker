@@ -1,8 +1,6 @@
-import React, { useMemo, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import BottomSheet, { BottomSheetFlatList } from "@gorhom/bottom-sheet";
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
-import EvilIcons from "react-native-vector-icons/EvilIcons";
 
 const canvasSizes = [
   { id: "1", label: "Square", size: "2000 x 2000", icon: "square-full", color: "#4b5563" },
@@ -15,17 +13,6 @@ const canvasSizes = [
 ];
 
 const Create = ({ navigation }) => {
-  const bottomSheetRef = useRef(null);
-  const snapPoints = useMemo(() => ["50%"], []);
-
-  const handleOpen = useCallback(() => {
-    bottomSheetRef.current?.expand();
-  }, []);
-
-  const handleClose = useCallback(() => {
-    bottomSheetRef.current?.close();
-  }, []);
-
   const renderItem = ({ item }) => {
     const [w, h] = item.size.split("x").map((s) => parseInt(s.trim(), 10));
     const maxDim = 100;
@@ -54,36 +41,15 @@ const Create = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>🎨 Create New Poster</Text>
+      <Text style={styles.header}>Create New Poster</Text>
 
-      <TouchableOpacity style={styles.openButton} onPress={handleOpen}>
-        <Text style={styles.openText}>Choose Canvas Size</Text>
-      </TouchableOpacity>
-
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose={false}
-        enableHandlePanningGesture={false}
-        enableContentPanningGesture={false}
-      >
-        <View style={styles.contentContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <EvilIcons name="close-o" size={32} color="#666" />
-          </TouchableOpacity>
-
-          <Text style={styles.sheetTitle}>Select a Canvas</Text>
-          <BottomSheetFlatList
-            data={canvasSizes}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            renderItem={renderItem}
-            contentContainerStyle={styles.listContainer}
-          />
-        </View>
-      </BottomSheet>
+      <FlatList
+        data={canvasSizes}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        numColumns={2} // grid layout
+        contentContainerStyle={styles.listContainer}
+      />
     </View>
   );
 };
@@ -93,60 +59,28 @@ export default Create;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     backgroundColor: "#f9fafb",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    padding: 15,
   },
   header: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 20,
-    color: "#111",
-  },
-  openButton: {
-    backgroundColor: "#3c91ec",
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    borderRadius: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  openText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  contentContainer: {
-    flex: 1,
-    paddingTop: 10,
-    paddingHorizontal: 16,
-  },
-  sheetTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 14,
-    color: "#333",
-    marginLeft: 4,
-  },
-  closeButton: {
-    alignSelf: "flex-end",
-    padding: 6,
-    marginBottom: 6,
-  },
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#111',
+        marginBottom: 25,
+    },
   listContainer: {
-    paddingHorizontal: 8,
+    paddingBottom: 20,
   },
   card: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
-    marginRight: 16,
+    margin: 8,
     alignItems: "center",
     justifyContent: "center",
-    width: 150,
+    flex: 1,
+    maxWidth: "48%",
     height: 200,
     shadowColor: "#000",
     shadowOpacity: 0.08,
@@ -167,6 +101,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 4,
     color: "#111",
+    textAlign: "center",
   },
   size: {
     fontSize: 12,

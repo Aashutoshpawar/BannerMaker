@@ -11,9 +11,9 @@ export default StyleSheet.create({
   },
   header: {
     fontSize: 28,
-    fontFamily: 'OpenSans',
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 25,
   },
   floatingBtn: {
     borderWidth: 1,
@@ -42,7 +42,7 @@ export default StyleSheet.create({
   },
   categoryContainer: {
     marginBottom: 25,
-    
+
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -65,7 +65,7 @@ export default StyleSheet.create({
     width: 150,
     height: 150,
     backgroundColor: '#55bdd4ff',
-     },
+  },
   templateImage: {
     width: '100%',
     height: '100%',
