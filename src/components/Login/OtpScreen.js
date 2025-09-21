@@ -34,11 +34,11 @@ const OtpScreen = ({ navigation }) => {
   const handleVerify = () => {
     const enteredOtp = otp.join('');
     console.log('Entered OTP:', enteredOtp);
-    if (enteredOtp.length === 4) {
+    // if (enteredOtp.length === 4) {
       navigation.navigate('MainPage');
-    } else {
-      alert('Please enter all 4 digits');
-    }
+    // } else {
+    //   alert('Please enter all 4 digits');
+    // }
   };
 
   return (

@@ -1,4 +1,5 @@
-import React, { useState, useRef, useMemo, useCallback } from "react";
+// Canvas.js
+import React, { useState, useRef, useMemo } from "react";
 import {
   View,
   Image,
@@ -8,31 +9,27 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  TextInput,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  runOnJS,
-} from "react-native-reanimated";
-import { launchImageLibrary } from "react-native-image-picker";
+import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from "react-native-reanimated";
+
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
-import Evilcons from "react-native-vector-icons/EvilIcons";
+import EvilIcons from "react-native-vector-icons/EvilIcons";
 import AntDesign from "react-native-vector-icons/AntDesign";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import Octicons from "react-native-vector-icons/Octicons";
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import Ionicons from "react-native-vector-icons/Ionicons";
+
+import TextEditor from "./Functions/TextEditor";
+import StickerManager from "./Functions/StickerManager";
+import ImageUploader from "./Functions/ImageUploader";
+import BackgroundSelector from "./Functions/BackgroundSelector";
 
 const Canvas = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { image, canvas } = route.params || {};
 
+  const [activeFont, setActiveFont] = useState("System");
   const [stickers, setStickers] = useState([]);
   const [texts, setTexts] = useState([]);
   const [background, setBackground] = useState(image || null);
@@ -44,41 +41,48 @@ const Canvas = () => {
   // Text editing
   const [textInputValue, setTextInputValue] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
+  const [textEditorVisible, setTextEditorVisible] = useState(false);
 
-  // Back confirmation modal
-  const [backModalVisible, setBackModalVisible] = useState(false);
-
-  // BottomSheet ref
   const bottomSheetRef = useRef(null);
   const snapPoints = useMemo(() => ["25%", "40%"], []);
 
+  // ---------- Undo / Redo / Save ----------
   const pushToHistory = () => {
-    setHistory((prev) => [...prev, { stickers, texts, background }]);
+    setHistory((prev) => [
+      ...prev,
+      { stickers: [...stickers], texts: [...texts], background },
+    ]);
     setRedoStack([]);
   };
 
   const undo = () => {
     if (history.length === 0) return;
     const last = history[history.length - 1];
-    setRedoStack((prev) => [...prev, { stickers, texts, background }]);
+    setRedoStack((prev) => [
+      ...prev,
+      { stickers: [...stickers], texts: [...texts], background },
+    ]);
     setStickers(last.stickers);
     setTexts(last.texts);
     setBackground(last.background);
-    setHistory(history.slice(0, -1))
+    setHistory((prev) => prev.slice(0, prev.length - 1));
   };
 
   const redo = () => {
     if (redoStack.length === 0) return;
     const next = redoStack[redoStack.length - 1];
-    setHistory((prev) => [...prev, { stickers, texts, background }]);
+    setHistory((prev) => [
+      ...prev,
+      { stickers: [...stickers], texts: [...texts], background },
+    ]);
     setStickers(next.stickers);
     setTexts(next.texts);
     setBackground(next.background);
-    setRedoStack(redoStack.slice(0, -1));
+    setRedoStack((prev) => prev.slice(0, prev.length - 1));
   };
 
   const save = () => {
-    setSavedState({ stickers, texts, background });
+    setSavedState({ stickers: [...stickers], texts: [...texts], background });
     Alert.alert("Saved", "Your canvas has been saved!");
   };
 
@@ -93,18 +97,7 @@ const Canvas = () => {
     }
   };
 
-  const pickBackground = () => {
-    launchImageLibrary({ mediaType: "photo" }, (res) => {
-      if (!res.didCancel && res.assets?.length > 0) {
-        const uri = res.assets[0].uri;
-        if (uri) {
-          pushToHistory();
-          setBackground(uri.toString());
-        }
-      }
-    });
-  };
-
+  // ---------- Canvas Size ----------
   if (!canvas || !canvas.size) {
     return (
       <View style={styles.emptyContainer}>
@@ -124,8 +117,11 @@ const Canvas = () => {
   const displayWidth = Math.round(canvasWidth * scale);
   const displayHeight = Math.round(canvasHeight * scale);
 
-  // --- Position Updaters ---
+  const canvasTopMargin = 20;
+
+  // ---------- Position Updaters ----------
   const updateTextPosition = (index, x, y, scale, rotation) => {
+    if (index === null || index >= texts.length) return;
     setTexts((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], x, y, scale, rotation };
@@ -134,6 +130,7 @@ const Canvas = () => {
   };
 
   const updateStickerPosition = (index, x, y, scale, rotation) => {
+    if (index === null || index >= stickers.length) return;
     setStickers((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], x, y, scale, rotation };
@@ -141,12 +138,12 @@ const Canvas = () => {
     });
   };
 
-  // --- Draggable Text ---
+  // ---------- Draggable Text ----------
   const DraggableText = ({ item, index }) => {
-    const translateX = useSharedValue(item.x);
-    const translateY = useSharedValue(item.y);
-    const scale = useSharedValue(item.scale);
-    const rotation = useSharedValue(item.rotation);
+    const translateX = useSharedValue(item.x ?? 50);
+    const translateY = useSharedValue(item.y ?? 50);
+    const scaleValue = useSharedValue(item.scale ?? 1);
+    const rotationValue = useSharedValue(item.rotation ?? 0);
 
     const drag = Gesture.Pan()
       .onChange((e) => {
@@ -158,36 +155,36 @@ const Canvas = () => {
           index,
           translateX.value,
           translateY.value,
-          scale.value,
-          rotation.value
+          scaleValue.value,
+          rotationValue.value
         );
       });
 
     const pinch = Gesture.Pinch()
       .onChange((e) => {
-        scale.value *= e.scaleChange;
+        scaleValue.value *= e.scaleChange;
       })
       .onEnd(() => {
         runOnJS(updateTextPosition)(
           index,
           translateX.value,
           translateY.value,
-          scale.value,
-          rotation.value
+          scaleValue.value,
+          rotationValue.value
         );
       });
 
     const rotate = Gesture.Rotation()
       .onChange((e) => {
-        rotation.value += e.rotationChange;
+        rotationValue.value += e.rotationChange;
       })
       .onEnd(() => {
         runOnJS(updateTextPosition)(
           index,
           translateX.value,
           translateY.value,
-          scale.value,
-          rotation.value
+          scaleValue.value,
+          rotationValue.value
         );
       });
 
@@ -198,8 +195,8 @@ const Canvas = () => {
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
-        { scale: scale.value },
-        { rotateZ: `${rotation.value}rad` },
+        { scale: scaleValue.value },
+        { rotateZ: `${rotationValue.value}rad` },
       ],
     }));
 
@@ -207,36 +204,52 @@ const Canvas = () => {
       <GestureDetector gesture={gesture}>
         <Animated.View style={[animatedStyle]}>
           <TouchableOpacity
+            activeOpacity={1}
             onPress={() => {
               setEditingIndex(index);
               setTextInputValue(item.value);
-              bottomSheetRef.current?.expand(); // Open bottom sheet
+              setTextEditorVisible(true);
             }}
           >
-            <Text
-              style={{
-                fontSize: 26,
-                fontWeight: "bold",
-                color: "#fff",
-                textShadowColor: "#000",
-                textShadowOffset: { width: 2, height: 2 },
-                textShadowRadius: 2,
-              }}
+            <View
+              style={[
+                editingIndex === index && {
+                  borderWidth: 1,
+                  borderStyle: "dashed",
+                  borderColor: "black",
+                  padding: 4,
+                },
+              ]}
             >
-              {item.value}
-            </Text>
+              <Text
+                style={{
+                  fontSize: item.fontSize || 26,
+                  fontFamily: item.fontFamily || "System",
+                  color: item.color || "#fff",
+                  fontWeight: item.bold ? "bold" : "normal",
+                  fontStyle: item.italic ? "italic" : "normal",
+                  textDecorationLine: item.underline ? "underline" : "none",
+                  textAlign: item.align || "left",
+                  textShadowColor: "#000",
+                  textShadowOffset: { width: 2, height: 2 },
+                  textShadowRadius: 2,
+                }}
+              >
+                {item.value}
+              </Text>
+            </View>
           </TouchableOpacity>
         </Animated.View>
       </GestureDetector>
     );
   };
 
-  // --- Draggable Sticker ---
+  // ---------- Draggable Sticker ----------
   const DraggableSticker = ({ item, index }) => {
-    const translateX = useSharedValue(item.x);
-    const translateY = useSharedValue(item.y);
-    const scale = useSharedValue(item.scale);
-    const rotation = useSharedValue(item.rotation);
+    const translateX = useSharedValue(item.x ?? 50);
+    const translateY = useSharedValue(item.y ?? 50);
+    const scaleValue = useSharedValue(item.scale ?? 1);
+    const rotationValue = useSharedValue(item.rotation ?? 0);
 
     const drag = Gesture.Pan()
       .onChange((e) => {
@@ -248,36 +261,36 @@ const Canvas = () => {
           index,
           translateX.value,
           translateY.value,
-          scale.value,
-          rotation.value
+          scaleValue.value,
+          rotationValue.value
         );
       });
 
     const pinch = Gesture.Pinch()
       .onChange((e) => {
-        scale.value *= e.scaleChange;
+        scaleValue.value *= e.scaleChange;
       })
       .onEnd(() => {
         runOnJS(updateStickerPosition)(
           index,
           translateX.value,
           translateY.value,
-          scale.value,
-          rotation.value
+          scaleValue.value,
+          rotationValue.value
         );
       });
 
     const rotate = Gesture.Rotation()
       .onChange((e) => {
-        rotation.value += e.rotationChange;
+        rotationValue.value += e.rotationChange;
       })
       .onEnd(() => {
         runOnJS(updateStickerPosition)(
           index,
           translateX.value,
           translateY.value,
-          scale.value,
-          rotation.value
+          scaleValue.value,
+          rotationValue.value
         );
       });
 
@@ -288,14 +301,14 @@ const Canvas = () => {
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
-        { scale: scale.value },
-        { rotateZ: `${rotation.value}rad` },
+        { scale: scaleValue.value },
+        { rotateZ: `${rotationValue.value}rad` },
       ],
     }));
 
     return (
       <GestureDetector gesture={gesture}>
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={[animatedStyle]}>
           <Image
             source={{ uri: item.uri }}
             style={{ width: 80, height: 80 }}
@@ -306,28 +319,23 @@ const Canvas = () => {
     );
   };
 
+  const DraggableTextMemo = React.memo(DraggableText);
+  const DraggableStickerMemo = React.memo(DraggableSticker);
+
   return (
     <View style={{ flex: 1 }}>
-      {/* --- Header --- */}
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => {
-            setBackModalVisible(true)
-            navigation.goBack()
-          }
-
-          }
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <FontAwesome5 name="arrow-left" size={20} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}></Text>
         <View style={styles.topcontrols}>
           <TouchableOpacity style={styles.button} onPress={undo}>
-            <Evilcons name="undo" size={30} color="black" />
+            <EvilIcons name="undo" size={30} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={redo}>
-            <Evilcons name="redo" size={30} color="black" />
+            <EvilIcons name="redo" size={30} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={save}>
             <AntDesign name="download" size={24} color="black" />
@@ -335,162 +343,80 @@ const Canvas = () => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View
-          style={[
-            styles.canvasArea,
-            { width: displayWidth, height: displayHeight },
-          ]}
-        >
+      {/* Canvas Area */}
+      <ScrollView contentContainerStyle={[styles.scrollContainer, { paddingTop: canvasTopMargin }]}>
+        <View style={[styles.canvasArea, { width: displayWidth, height: displayHeight }]}>
           {background ? (
             <Image
-              source={
-                typeof background === "string" ? { uri: background } : background
-              }
+              source={typeof background === "string" ? { uri: background } : background}
               style={styles.backgroundImage}
               resizeMode="cover"
             />
           ) : (
-            <View
-              style={[styles.backgroundImage, { backgroundColor: "#fff" }]}
-            />
+            <View style={[styles.backgroundImage, { backgroundColor: "#fff" }]} />
           )}
 
-          {/* Stickers */}
           {stickers.map((item, index) => (
-            <DraggableSticker key={`sticker-${index}`} item={item} index={index} />
+            <DraggableStickerMemo key={`sticker-${index}`} item={item} index={index} />
           ))}
 
-          {/* Texts */}
           {texts.map((item, index) => (
-            <DraggableText key={`text-${index}`} item={item} index={index} />
+            <DraggableTextMemo key={`text-${index}`} item={item} index={index} />
           ))}
         </View>
       </ScrollView>
 
       {/* Controls */}
       <View style={styles.controls}>
-        {/* Add Text */}
         <TouchableOpacity
           style={styles.button}
           onPress={() => {
             setEditingIndex(null);
             setTextInputValue("");
-            bottomSheetRef.current?.expand(); // open bottom sheet
+            setTextEditorVisible(true);
           }}
         >
           <MaterialDesignIcons name="format-textbox" size={28} color="black" />
           <Text style={styles.buttonText}>Text</Text>
         </TouchableOpacity>
 
-        {/* Add Sticker */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            pushToHistory();
-            bottomSheetRef.current?.expand();
-            setStickers((prev) => [
-              ...prev,
-              {
-                uri: "https://cdn-icons-png.flaticon.com/512/616/616408.png",
-                x: displayWidth / 2 - 40,
-                y: displayHeight / 2 - 40,
-                scale: 1,
-                rotation: 0,
-              },
-            ]);
-          }}
-        >
-          <MaterialDesignIcons name="sticker-emoji" size={28} color="black" />
-          <Text style={styles.buttonText}>Sticker</Text>
-        </TouchableOpacity>
+        <StickerManager
+          pushToHistory={pushToHistory}
+          setStickers={setStickers}
+          bottomSheetRef={bottomSheetRef}
+          displayWidth={displayWidth}
+          displayHeight={displayHeight}
+        />
 
-        {/* Upload Image */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            launchImageLibrary({ mediaType: "photo" }, (res) => {
-              if (!res.didCancel && res.assets?.length > 0) {
-                const uri = res.assets[0].uri;
-                if (uri) {
-                  pushToHistory();
-                  setStickers((prev) => [
-                    ...prev,
-                    {
-                      uri,
-                      x: displayWidth / 2 - 50,
-                      y: displayHeight / 2 - 50,
-                      scale: 1,
-                      rotation: 0,
-                    },
-                  ]);
-                }
-              }
-            });
-          }}
-        >
-          <Ionicons name="image-outline" size={28} color="black" />
-          <Text style={styles.buttonText}>Upload</Text>
-        </TouchableOpacity>
+        <ImageUploader
+          pushToHistory={pushToHistory}
+          setStickers={setStickers}
+          displayWidth={displayWidth}
+          displayHeight={displayHeight}
+        />
 
-        {/* Change Background */}
-        <TouchableOpacity style={styles.button} onPress={pickBackground}>
-          <MaterialDesignIcons name="texture-box" size={26} color="black" />
-          <Text style={styles.buttonText}>Background</Text>
-        </TouchableOpacity>
+        <BackgroundSelector
+          pushToHistory={pushToHistory}
+          setBackground={setBackground}
+        />
       </View>
 
-      {/* --- Text Input Bottom Sheet --- */}
-      <BottomSheet ref={bottomSheetRef} index={-1} snapPoints={snapPoints}>
-        <BottomSheetView style={{ padding: 20 }}>
-          <Text style={{ fontSize: 18, marginBottom: 10 }}>Enter Text</Text>
-          <TextInput
-            value={textInputValue}
-            onChangeText={setTextInputValue}
-            style={styles.textInput}
-            placeholder="Type something..."
-          />
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                bottomSheetRef.current?.close();
-                setTextInputValue("");
-                setEditingIndex(null);
-              }}
-            >
-              <Text>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => {
-                pushToHistory();
-                if (editingIndex !== null) {
-                  const updated = [...texts];
-                  updated[editingIndex].value = textInputValue;
-                  setTexts(updated);
-                } else {
-                  setTexts((prev) => [
-                    ...prev,
-                    {
-                      value: textInputValue,
-                      x: displayWidth / 2 - 50,
-                      y: displayHeight / 2 - 20,
-                      scale: 1,
-                      rotation: 0,
-                    },
-                  ]);
-                }
-                bottomSheetRef.current?.close();
-                setTextInputValue("");
-                setEditingIndex(null);
-              }}
-            >
-              <Text>Submit</Text>
-            </TouchableOpacity>
-          </View>
-        </BottomSheetView>
-      </BottomSheet>
+      {/* Text Editor Modal */}
+      <TextEditor
+        modalVisible={textEditorVisible}
+        setModalVisible={setTextEditorVisible}
+        textInputValue={textInputValue}
+        setTextInputValue={setTextInputValue}
+        editingIndex={editingIndex}
+        setEditingIndex={setEditingIndex}
+        texts={texts}
+        setTexts={setTexts}
+        displayWidth={displayWidth}
+        displayHeight={displayHeight}
+        pushToHistory={pushToHistory}
+        activeFont={activeFont}
+        setActiveFont={setActiveFont}
+      />
     </View>
   );
 };
@@ -502,10 +428,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
-    backgroundColor: "#fff",
     elevation: 4,
   },
   backButton: { padding: 5 },
@@ -515,10 +440,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#000",
+    fontFamily: "Hind-Medium",
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     padding: 20,
   },
@@ -528,8 +454,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     overflow: "hidden",
-      elevation: 8, 
-
+    elevation: 8,
   },
   backgroundImage: {
     width: "100%",
@@ -552,30 +477,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
   button: {
-    alignItems: "center",   // centers icon + text horizontally
+    alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
     borderRadius: 6,
   },
   buttonText: {
-    marginTop: 4,           // small space between icon & text
+    marginTop: 4,
     fontSize: 12,
     color: "#000",
     textAlign: "center",
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 5,
-  },
-  modalButton: {
-    padding: 10,
-    backgroundColor: "#ddd",
-    borderRadius: 6,
-    minWidth: 80,
-    alignItems: "center",
-    marginHorizontal: 5,
   },
 });

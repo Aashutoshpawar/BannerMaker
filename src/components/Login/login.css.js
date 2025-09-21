@@ -17,6 +17,7 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
+    fontFamily:"Open Sans Regular",
   },
   subtitle: {
     fontSize: 15,
