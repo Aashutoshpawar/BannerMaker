@@ -1,48 +1,39 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View, Text, TouchableOpacity } from 'react-native';
+import { TextInput, View, Text } from 'react-native';
 import styles from './login.css';
+import GradientButton from '../../constatnts/GradientButton';
+
 const Login = ({ navigation }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+
+  const handleOTP = () => {
+    console.log('otp sent');
+    navigation.navigate('OTPScreen');
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
-
-      <TextInput
-        placeholder="Username"
-        placeholderTextColor="#888"
-        style={styles.input}
-        onChangeText={setUsername}
-        value={username}
-      />
-
-      <TextInput
-        placeholder="Password"
-        placeholderTextColor="#888"
-        style={styles.input}
-        secureTextEntry
-        onChangeText={setPassword}
-        value={password}
-      />
-
-      {/* Uncomment if you want Forgot Password link */}
-      {/* <TouchableOpacity>
-        <Text style={styles.forgotPassword}>Forgot Password?</Text>
-      </TouchableOpacity> */}
-
-      <TouchableOpacity
-        style={styles.loginButton}
-        onPress={() => navigation.replace('MainPage')}
-      >
-        <Text style={styles.loginButtonText}>Login</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-        <Text style={styles.signupText}>
-          Don't have an account? <Text style={styles.signupLink}>Sign Up</Text>
+      <View style={styles.subcontainer}>
+        <Text style={styles.title}>Enter Your Mobile Number</Text>
+        <Text style={styles.subtitle}>
+          We'll send you a verification code to get you started
         </Text>
-      </TouchableOpacity>
+
+        <View style={styles.inputWrapper}>
+          <Text style={styles.header}>Phone No</Text>
+          <TextInput
+            placeholder="Phone Number"
+            placeholderTextColor="#888"
+            style={styles.input}
+            onChangeText={setPhone}
+            value={phone}
+          />
+        </View>
+
+        <View style={styles.buttonWrapper}>
+          <GradientButton title="Get OTP" onPress={handleOTP} />
+        </View>
+      </View>
     </View>
   );
 };

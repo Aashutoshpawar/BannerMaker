@@ -11,9 +11,9 @@ export default StyleSheet.create({
   },
   header: {
     fontSize: 28,
-    fontFamily: 'OpenSans',
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 25,
   },
   floatingBtn: {
     borderWidth: 1,
@@ -37,10 +37,12 @@ export default StyleSheet.create({
   container: {
     flex: 1,
     padding: 15,
-    backgroundColor: '#fff',
+    // backgroundColor: '#dededeff',
+    backgroundColor: '#f9f9f9',
   },
   categoryContainer: {
     marginBottom: 25,
+
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -60,7 +62,7 @@ export default StyleSheet.create({
     marginRight: 10,
     borderRadius: 10,
     overflow: 'hidden',
-    width: 100,
+    width: 150,
     height: 150,
     backgroundColor: '#55bdd4ff',
   },
