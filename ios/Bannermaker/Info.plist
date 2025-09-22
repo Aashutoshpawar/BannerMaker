@@ -49,18 +49,28 @@
 	<false/>
 	<key>UIAppFonts</key>
 	<array>
-		<string>FunnelDisplay-VariableFont_wght.ttf</string>
-		<string>Hind-Medium.ttf</string>
 		<string>LobsterTwo-Regular.ttf</string>
-		<string>Mukta-Medium.ttf</string>
-		<string>OpenSans-VariableFont_wdth,wght.ttf</string>
-		<string>Orbitron-VariableFont_wght.ttf</string>
 		<string>Poppins-Regular.ttf</string>
 		<string>PTSerif-Regular.ttf</string>
 		<string>Rajdhani-Regular.ttf</string>
-		<string>RobotoCondensed-VariableFont_wght.ttf</string>
-		<string>Satisfy-Regular.ttf</string>
-		<string>Teko-VariableFont_wght.ttf</string>
+		<string>Amita-Regular.ttf</string>
+		<string>Hind-Regular.ttf</string>
+		<string>Mukta-Regular.ttf</string>
+		<string>MuktaMalar-Regular.ttf</string>
+		<string>Amita-Bold.ttf</string>
+		<string>Fredoka-Bold.ttf</string>
+		<string>Fredoka-Regular.ttf</string>
+		<string>Fredoka_Condensed-Bold.ttf</string>
+		<string>Fredoka_Condensed-Regular.ttf</string>
+		<string>Fredoka_Expanded-Bold.ttf</string>
+		<string>Fredoka_Expanded-Regular.ttf</string>
+		<string>Hind-Bold.ttf</string>
+		<string>LobsterTwo-Bold.ttf</string>
+		<string>Mukta-Bold.ttf</string>
+		<string>MuktaMalar-Bold.ttf</string>
+		<string>Poppins-Bold.ttf</string>
+		<string>PTSerif-Bold.ttf</string>
+		<string>Rajdhani-Bold.ttf</string>
 	</array>
 </dict>
 </plist>
