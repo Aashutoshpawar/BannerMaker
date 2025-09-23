@@ -12,7 +12,11 @@ import {
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { useSharedValue, useAnimatedStyle, runOnJS } from "react-native-reanimated";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  runOnJS,
+} from "react-native-reanimated";
 
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import EvilIcons from "react-native-vector-icons/EvilIcons";
@@ -140,11 +144,19 @@ const Canvas = () => {
 
   // ---------- Draggable Text ----------
   const DraggableText = ({ item, index }) => {
+    const [selected, setSelected] = useState(false);
+
+    // Auto-select if being edited
+    React.useEffect(() => {
+      if (editingIndex === index) setSelected(true);
+    }, [editingIndex]);
+
     const translateX = useSharedValue(item.x ?? 50);
     const translateY = useSharedValue(item.y ?? 50);
     const scaleValue = useSharedValue(item.scale ?? 1);
     const rotationValue = useSharedValue(item.rotation ?? 0);
 
+    // Main drag gesture
     const drag = Gesture.Pan()
       .onChange((e) => {
         translateX.value += e.changeX;
@@ -160,9 +172,10 @@ const Canvas = () => {
         );
       });
 
-    const pinch = Gesture.Pinch()
+    // Rotate handle gesture
+    const rotateGesture = Gesture.Pan()
       .onChange((e) => {
-        scaleValue.value *= e.scaleChange;
+        rotationValue.value += e.changeX * 0.01;
       })
       .onEnd(() => {
         runOnJS(updateTextPosition)(
@@ -174,9 +187,11 @@ const Canvas = () => {
         );
       });
 
-    const rotate = Gesture.Rotation()
+    // Scale handle gesture
+    const scaleGesture = Gesture.Pan()
       .onChange((e) => {
-        rotationValue.value += e.rotationChange;
+        scaleValue.value += e.changeX * 0.005;
+        if (scaleValue.value < 0.2) scaleValue.value = 0.2;
       })
       .onEnd(() => {
         runOnJS(updateTextPosition)(
@@ -187,8 +202,6 @@ const Canvas = () => {
           rotationValue.value
         );
       });
-
-    const gesture = Gesture.Simultaneous(drag, pinch, rotate);
 
     const animatedStyle = useAnimatedStyle(() => ({
       position: "absolute",
@@ -201,11 +214,13 @@ const Canvas = () => {
     }));
 
     return (
-      <GestureDetector gesture={gesture}>
+      <GestureDetector gesture={drag}>
         <Animated.View style={[animatedStyle]}>
           <TouchableOpacity
             activeOpacity={1}
+
             onPress={() => {
+              setSelected(true)
               setEditingIndex(index);
               setTextInputValue(item.value);
               setTextEditorVisible(true);
@@ -213,11 +228,11 @@ const Canvas = () => {
           >
             <View
               style={[
-                editingIndex === index && {
+                selected && {
                   borderWidth: 1,
                   borderStyle: "dashed",
                   borderColor: "black",
-                  padding: 4,
+                  padding: 8,
                 },
               ]}
             >
@@ -230,15 +245,45 @@ const Canvas = () => {
                   fontStyle: item.italic ? "italic" : "normal",
                   textDecorationLine: item.underline ? "underline" : "none",
                   textAlign: item.align || "left",
-                  textShadowColor: "#000",
-                  textShadowOffset: { width: 2, height: 2 },
-                  textShadowRadius: 2,
                 }}
               >
                 {item.value}
               </Text>
             </View>
           </TouchableOpacity>
+
+          {selected && (
+            <>
+              {/* Delete */}
+
+              <GestureDetector
+                gesture={Gesture.Tap().onEnd(() => {
+                  runOnJS(() => {
+                    setTexts((prev) => prev.filter((_, i) => i !== index));
+                  })();
+                })}
+              >
+                <Animated.View style={[styles.handle, { top: -16, left: -16 }]}>
+                  <AntDesign name="delete" size={16} color="white" />
+                </Animated.View>
+              </GestureDetector>
+
+
+              {/* Rotate */}
+              <GestureDetector gesture={rotateGesture}>
+                <Animated.View style={[styles.handle, { bottom: -16, left: -16 }]}>
+                  <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
+                </Animated.View>
+              </GestureDetector>
+
+              {/* Scale */}
+              <GestureDetector gesture={scaleGesture}>
+                <Animated.View style={[styles.handle, { bottom: -16, right: -16 }]}>
+                  <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
+                </Animated.View>
+              </GestureDetector>
+            </>
+          )}
         </Animated.View>
       </GestureDetector>
     );
@@ -246,11 +291,14 @@ const Canvas = () => {
 
   // ---------- Draggable Sticker ----------
   const DraggableSticker = ({ item, index }) => {
+    const [selected, setSelected] = useState(false);
+
     const translateX = useSharedValue(item.x ?? 50);
     const translateY = useSharedValue(item.y ?? 50);
     const scaleValue = useSharedValue(item.scale ?? 1);
     const rotationValue = useSharedValue(item.rotation ?? 0);
 
+    // Main drag
     const drag = Gesture.Pan()
       .onChange((e) => {
         translateX.value += e.changeX;
@@ -266,9 +314,10 @@ const Canvas = () => {
         );
       });
 
-    const pinch = Gesture.Pinch()
+    // Rotate handle
+    const rotateGesture = Gesture.Pan()
       .onChange((e) => {
-        scaleValue.value *= e.scaleChange;
+        rotationValue.value += e.changeX * 0.01;
       })
       .onEnd(() => {
         runOnJS(updateStickerPosition)(
@@ -280,9 +329,11 @@ const Canvas = () => {
         );
       });
 
-    const rotate = Gesture.Rotation()
+    // Scale handle
+    const scaleGesture = Gesture.Pan()
       .onChange((e) => {
-        rotationValue.value += e.rotationChange;
+        scaleValue.value += e.changeX * 0.005;
+        if (scaleValue.value < 0.2) scaleValue.value = 0.2;
       })
       .onEnd(() => {
         runOnJS(updateStickerPosition)(
@@ -293,8 +344,6 @@ const Canvas = () => {
           rotationValue.value
         );
       });
-
-    const gesture = Gesture.Simultaneous(drag, pinch, rotate);
 
     const animatedStyle = useAnimatedStyle(() => ({
       position: "absolute",
@@ -307,13 +356,57 @@ const Canvas = () => {
     }));
 
     return (
-      <GestureDetector gesture={gesture}>
+      <GestureDetector gesture={drag}>
         <Animated.View style={[animatedStyle]}>
-          <Image
-            source={{ uri: item.uri }}
-            style={{ width: 80, height: 80 }}
-            resizeMode="contain"
-          />
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setSelected(true)}
+          >
+            <View
+              style={[
+                selected && {
+                  borderWidth: 1,
+                  borderStyle: "dashed",
+                  borderColor: "black",
+                  padding: 4,
+                },
+              ]}
+            >
+              <Image
+                source={{ uri: item.uri }}
+                style={{ width: 80, height: 80 }}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+
+          {selected && (
+            <>
+              {/* Delete */}
+              <TouchableOpacity
+                onPress={() =>
+                  setStickers((prev) => prev.filter((_, i) => i !== index))
+                }
+                style={[styles.handle, { top: -16, left: -16 }]}
+              >
+                <AntDesign name="delete" size={16} color="white" />
+              </TouchableOpacity>
+
+              {/* Rotate */}
+              <GestureDetector gesture={rotateGesture}>
+                <Animated.View style={[styles.handle, { bottom: -16, left: -16 }]}>
+                  <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
+                </Animated.View>
+              </GestureDetector>
+
+              {/* Scale */}
+              <GestureDetector gesture={scaleGesture}>
+                <Animated.View style={[styles.handle, { bottom: -16, right: -16 }]}>
+                  <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
+                </Animated.View>
+              </GestureDetector>
+            </>
+          )}
         </Animated.View>
       </GestureDetector>
     );
@@ -416,6 +509,7 @@ const Canvas = () => {
         pushToHistory={pushToHistory}
         activeFont={activeFont}
         setActiveFont={setActiveFont}
+        pointerEvents="box-none" // <--- Add this
       />
     </View>
   );
@@ -487,5 +581,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#000",
     textAlign: "center",
+  },
+  handle: {
+    position: "absolute",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "black",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
   },
 });

@@ -1,30 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   Modal,
   ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  PanResponder,
+  Animated,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-// Map fonts to their regular and bold variants
 const fontMap = {
-  "Amita": { regular: "Amita-Regular", bold: "Amita-Bold" },
-  "Fredoka": { regular: "Fredoka-Regular", bold: "Fredoka-Bold" },
-  "Fredoka SemiExpanded": { regular: "Fredoka_SemiExpanded-Regular", bold: "Fredoka_Condensed-Bold" },
-  "Hind": { regular: "Hind-Regular", bold: "Hind-Bold" },
-  "Lobster Two": { regular: "LobsterTwo-Regular", bold: "LobsterTwo-Bold" },
-  "Mukta": { regular: "Mukta-Regular", bold: "Mukta-Bold" },
-  "Mukta Malar": { regular: "MuktaMalar-Regular", bold: "MuktaMalar-Bold" },
-  "Poppins": { regular: "Poppins-Regular", bold: "Poppins-Bold" },
-  "PT Serif": { regular: "PTSerif-Regular", bold: "PTSerif-Bold" },
-  "Rajdhani": { regular: "Rajdhani-Regular", bold: "Rajdhani-Bold" },
-  // Add more fonts if needed
+  System: { regular: "System", bold: "System" },
+  Serif: { regular: "serif", bold: "serif" },
+  "Sans-Serif": { regular: "sans-serif", bold: "sans-serif" },
+  Monospace: { regular: "monospace", bold: "monospace" },
+  Cursive: { regular: "cursive", bold: "cursive" },
+  Fantasy: { regular: "fantasy", bold: "fantasy" },
+  "Times New Roman": { regular: "Times New Roman", bold: "Times New Roman" },
+  Arial: { regular: "Arial", bold: "Arial Bold" },
+  Helvetica: { regular: "Helvetica", bold: "Helvetica Bold" },
 };
 
 const TextEditor = ({
@@ -42,335 +41,261 @@ const TextEditor = ({
   activeFont = "System",
   setActiveFont = () => {},
 }) => {
-  const [activeModal, setActiveModal] = useState(null);
   const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [fontModal, setFontModal] = useState(false);
+  const [colorModal, setColorModal] = useState(false);
+  const [textColor, setTextColor] = useState("#000");
+  const [isEdit, setIsEdit] = useState(false);
 
-  const fontStyles = [
-    { label: "System", fontFamily: "System" },
-    ...Object.keys(fontMap).map((label) => ({
-      label,
-      fontFamily: fontMap[label].regular,
-    })),
-  ];
+  // Animated bottom sheet
+  const panY = useState(new Animated.Value(0))[0];
 
-  const options = [
-    { name: "Text Formatting", key: "TextFormatting", icon: "create-outline" },
-    { name: "Font Style", key: "FontStyle", icon: "pencil" },
-    { name: "Outline & Disallow", key: "Outline", icon: "ban" },
-    { name: "Text Size", key: "TextSize", icon: "resize" },
-  ];
+  const resetPositionAnim = Animated.timing(panY, {
+    toValue: 0,
+    duration: 300,
+    useNativeDriver: true,
+  });
 
-  // Apply selected font style
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10,
+    onPanResponderMove: Animated.event([null, { dy: panY }], { useNativeDriver: false }),
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dy > 100) {
+        setModalVisible(false);
+        panY.setValue(0);
+      } else {
+        resetPositionAnim.start();
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      const textObj = texts[editingIndex];
+      setIsBold(textObj.bold || false);
+      setIsItalic(textObj.italic || false);
+      setIsUnderline(textObj.underline || false);
+      setActiveFont(textObj.fontLabel || "System");
+      setTextColor(textObj.color || "#000");
+      setIsEdit(true);
+    } else {
+      setIsBold(false);
+      setIsItalic(false);
+      setIsUnderline(false);
+      setTextColor("#000");
+      setIsEdit(false);
+    }
+  }, [editingIndex, texts]);
+
+  const fontStyles = Object.keys(fontMap).map((label) => ({
+    label,
+    fontFamily: fontMap[label].regular,
+  }));
+
+  const getCurrentTextStyle = () => ({
+    fontFamily: fontMap[activeFont]?.regular || "System",
+    fontSize: 20,
+    fontStyle: isItalic ? "italic" : "normal",
+    textDecorationLine: isUnderline ? "underline" : "none",
+    color: textColor,
+    fontWeight: isBold ? "bold" : "normal",
+  });
+
   const applyFontStyle = (fontLabel) => {
     setActiveFont(fontLabel);
-
     if (editingIndex !== null && texts?.[editingIndex]) {
       setTexts((prev) =>
-        prev.map((t, idx) => {
-          if (idx === editingIndex) {
-            const updated = { ...t, fontLabel };
-            const mapped = fontMap[fontLabel] || { regular: fontLabel, bold: fontLabel };
-            updated.fontFamily = updated.bold ? mapped.bold : mapped.regular;
-            updated.fontWeight = fontLabel === "System" ? (updated.bold ? "bold" : "normal") : "400";
-            return updated;
-          }
-          return t;
-        })
+        prev.map((t, idx) =>
+          idx === editingIndex
+            ? { ...t, fontLabel, fontFamily: fontMap[fontLabel]?.regular || "System" }
+            : t
+        )
       );
     }
+    setFontModal(false);
   };
 
-  // Apply text formatting like bold, italic, underline
   const applyTextFormatting = (format) => {
     if (editingIndex !== null && texts?.[editingIndex]) {
       setTexts((prev) =>
         prev.map((t, idx) => {
           if (idx === editingIndex) {
             const updated = { ...t };
-
-            // Bold
-            if (format.bold !== undefined) {
-              updated.bold = format.bold;
-              const fontLabel = updated.fontLabel || "System";
-              if (fontMap[fontLabel]) {
-                const mapped = fontMap[fontLabel];
-                updated.fontFamily = updated.bold ? mapped.bold : mapped.regular;
-                updated.fontWeight = "400"; // custom fonts ignore fontWeight
-              } else {
-                // System font
-                updated.fontFamily = "System";
-                updated.fontWeight = updated.bold ? "bold" : "normal";
-              }
-            }
-
-            // Italic
-            if (format.italic !== undefined) {
-              updated.italic = format.italic;
-              updated.fontStyle = format.italic ? "italic" : "normal";
-            }
-
-            // Underline
-            if (format.underline !== undefined) {
-              updated.underline = format.underline;
-              updated.textDecorationLine = format.underline ? "underline" : "none";
-            }
-
+            if (format.bold !== undefined) updated.bold = format.bold;
+            if (format.italic !== undefined) updated.italic = format.italic;
+            if (format.underline !== undefined) updated.underline = format.underline;
             return updated;
           }
           return t;
         })
       );
     }
+    if (format.bold !== undefined) setIsBold(format.bold);
+    if (format.italic !== undefined) setIsItalic(format.italic);
+    if (format.underline !== undefined) setIsUnderline(format.underline);
+  };
+
+  const changeCase = (type) => {
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      const updated = texts.map((t, idx) => {
+        if (idx === editingIndex) {
+          let value = t.value || "";
+          if (type === "upper") value = value.toUpperCase();
+          else if (type === "lower") value = value.toLowerCase();
+          else if (type === "capitalize")
+            value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+          return { ...t, value };
+        }
+        return t;
+      });
+      setTexts(updated);
+    }
+  };
+
+  const applyColor = (color) => {
+    setTextColor(color);
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      setTexts((prev) =>
+        prev.map((t, idx) =>
+          idx === editingIndex ? { ...t, color } : t
+        )
+      );
+    }
+    setColorModal(false);
+  };
+
+  const submitText = () => {
+    pushToHistory?.();
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      const updated = [...texts];
+      updated[editingIndex] = {
+        ...updated[editingIndex],
+        value: textInputValue ?? "",
+        fontFamily: fontMap[activeFont]?.regular || "System",
+        fontLabel: activeFont,
+        color: textColor,
+        bold: isBold,
+        italic: isItalic,
+        underline: isUnderline,
+      };
+      setTexts(updated);
+    } else {
+      setTexts((prev) => [
+        ...(prev ?? []),
+        {
+          value: textInputValue ?? "",
+          x: displayWidth / 2 - 50,
+          y: displayHeight / 2 - 20,
+          scale: 1,
+          rotation: 0,
+          fontFamily: fontMap[activeFont]?.regular || "System",
+          fontLabel: activeFont,
+          color: textColor,
+          bold: isBold,
+          italic: isItalic,
+          underline: isUnderline,
+          fontSize: 26,
+          textAlign: "left",
+        },
+      ]);
+    }
+    setTextInputValue("");
+    setEditingIndex(null);
+    setModalVisible(false);
   };
 
   return (
-    <Modal
-      visible={modalVisible}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setModalVisible(false)}
-    >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}
-      >
-        <View style={styles.contentContainer}>
-          {/* Header */}
-          <View style={styles.headerContainer}>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={{ flexDirection: "row", alignItems: "center" }}
-            >
-              <Ionicons name="arrow-back" size={24} color="#000" />
-              <Text style={styles.backText}>
-                {editingIndex !== null ? "Edit Text" : "Add Text"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Text Input */}
-          <TextInput
-            value={textInputValue ?? ""}
-            onChangeText={(text) => setTextInputValue(text ?? "")}
-            style={[
-              styles.textInput,
-              {
-                fontFamily:
-                  texts?.[editingIndex]?.fontFamily ||
-                  fontMap[activeFont]?.regular ||
-                  "System",
-                fontSize: texts?.[editingIndex]?.fontSize || 20,
-                fontStyle: texts?.[editingIndex]?.italic ? "italic" : "normal",
-                textDecorationLine: texts?.[editingIndex]?.underline
-                  ? "underline"
-                  : "none",
-                color: texts?.[editingIndex]?.color || "#000",
-                fontWeight: texts?.[editingIndex]?.fontWeight,
-              },
-            ]}
-            placeholder="Type something..."
-          />
-
-          {/* Option Buttons */}
-          {editingIndex !== null && texts?.[editingIndex] && (
-            <View style={styles.iconOptionsContainer}>
-              {options.map((opt, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={styles.iconButton}
-                  onPress={() => setActiveModal(opt.key)}
-                >
-                  <Ionicons name={opt.icon} size={28} color="#333" />
-                  <Text style={styles.iconLabel}>{opt.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {/* Font Style Modal */}
-          <Modal
-            visible={activeModal === "FontStyle"}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setActiveModal(null)}
+    <Modal visible={modalVisible} transparent animationType="fade">
+      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} pointerEvents="box-none">
+        <View style={{ flex: 1 }}>
+          <Animated.View
+            style={[styles.contentContainer, { transform: [{ translateY: panY }] }]}
+            {...panResponder.panHandlers}
           >
-            <View style={styles.subModalContainer}>
-              <View style={styles.subHeader}>
-                <TouchableOpacity
-                  style={{ flexDirection: "row", alignItems: "center" }}
-                  onPress={() => setActiveModal(null)}
-                >
-                  <Ionicons name="arrow-back" size={22} color="#000" />
-                  <Text style={styles.subHeaderText}>Choose Font Style</Text>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="arrow-back" size={24} color="#000" />
+                <Text style={styles.backText}>{isEdit ? "Edit Text" : "Add Text"}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Formatting Buttons */}
+            <View style={styles.optionRow}>
+              <TouchableOpacity onPress={() => applyTextFormatting({ bold: !isBold })} style={[styles.formatButton, isBold && styles.formatActive]}>
+                <Text style={{ fontWeight: "bold", color: isBold ? "#fff" : "#333" }}>B</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => applyTextFormatting({ italic: !isItalic })} style={[styles.formatButton, isItalic && styles.formatActive]}>
+                <Text style={{ fontStyle: "italic", color: isItalic ? "#fff" : "#333" }}>I</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => applyTextFormatting({ underline: !isUnderline })} style={[styles.formatButton, isUnderline && styles.formatActive]}>
+                <Text style={{ textDecorationLine: "underline", color: isUnderline ? "#fff" : "#333" }}>U</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => changeCase("upper")} style={styles.formatButton}><Text>UP</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => changeCase("lower")} style={styles.formatButton}><Text>low</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => changeCase("capitalize")} style={styles.formatButton}><Text>Cap</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setFontModal(true)} style={styles.formatButton}><Text>Font</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setColorModal(true)} style={styles.formatButton}>
+                <Text style={{ color: textColor }}>Color</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={textInputValue}
+              onChangeText={setTextInputValue}
+              placeholder="Type your text..."
+              style={[styles.textInput, getCurrentTextStyle()]}
+              multiline
+            />
+
+            <TouchableOpacity style={[styles.submitButton, { marginTop: 10 }]} onPress={submitText}>
+              <Text style={styles.buttonText}>{isEdit ? "Update" : "Add Text"}</Text>
+            </TouchableOpacity>
+
+            {/* Font Modal */}
+            <Modal visible={fontModal} transparent animationType="fade">
+              <View style={styles.subModalContainer}>
+                <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Font</Text>
+                <ScrollView horizontal>
+                  {fontStyles.map((fs, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={[styles.fontButton, activeFont === fs.label && styles.fontButtonActive]}
+                      onPress={() => applyFontStyle(fs.label)}
+                    >
+                      <Text style={[styles.fontText, { fontFamily: fs.fontFamily }]}>{fs.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity style={[styles.submitButton, { marginTop: 10 }]} onPress={() => setFontModal(false)}>
+                  <Text style={styles.buttonText}>Close</Text>
                 </TouchableOpacity>
               </View>
-              <ScrollView style={styles.subContent}>
-                {fontStyles.map((fs, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={[
-                      styles.fontButton,
-                      activeFont === fs.label && styles.fontButtonActive,
-                    ]}
-                    onPress={() => applyFontStyle(fs.label)}
-                  >
-                    <Text style={[styles.fontText, { fontFamily: fs.fontFamily }]}>
-                      {fs.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </Modal>
+            </Modal>
 
-          {/* Text Formatting Modal */}
-          <Modal
-            visible={activeModal === "TextFormatting"}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setActiveModal(null)}
-          >
-            <View style={styles.subModalContainer}>
-              <ScrollView style={styles.subContent}>
-                <Text style={styles.sectionTitle}>Styling</Text>
-                <View style={styles.optionRow}>
-                  {/* Bold */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (editingIndex !== null && texts?.[editingIndex]) {
-                        const currentBold = texts[editingIndex].bold || false;
-                        applyTextFormatting({ bold: !currentBold });
-                        setIsBold(!currentBold); // Update local state
-                      }
-                    }}
-                    style={[
-                      styles.formatButton,
-                      texts?.[editingIndex]?.bold && { backgroundColor: "#4a6cf7" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="text"
-                      size={22}
-                      color={texts?.[editingIndex]?.bold ? "#fff" : "#333"}
+            {/* Color Modal */}
+            <Modal visible={colorModal} transparent animationType="fade">
+              <View style={styles.subModalContainer}>
+                <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Color</Text>
+                <ScrollView horizontal contentContainerStyle={{ flexDirection: "row", gap: 10 }}>
+                  {["#000000","#FF0000","#00FF00","#0000FF","#FFFF00","#FF00FF","#00FFFF","#FFA500"].map((color) => (
+                    <TouchableOpacity
+                      key={color}
+                      style={[styles.colorButton, { backgroundColor: color }, textColor === color && styles.colorButtonActive]}
+                      onPress={() => applyColor(color)}
                     />
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        { color: texts?.[editingIndex]?.bold ? "#fff" : "#333" },
-                      ]}
-                    >
-                      Bold
-                    </Text>
-                  </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity style={[styles.submitButton, { marginTop: 10 }]} onPress={() => setColorModal(false)}>
+                  <Text style={styles.buttonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </Modal>
 
-                  {/* Italic */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      const isItalic = texts?.[editingIndex]?.italic || false;
-                      applyTextFormatting({ italic: !isItalic });
-                    }}
-                    style={[
-                      styles.formatButton,
-                      texts?.[editingIndex]?.italic && { backgroundColor: "#4a6cf7" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="italic"
-                      size={22}
-                      color={texts?.[editingIndex]?.italic ? "#fff" : "#333"}
-                    />
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        { color: texts?.[editingIndex]?.italic ? "#fff" : "#333" },
-                      ]}
-                    >
-                      Italic
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Underline */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      const isUnderline = texts?.[editingIndex]?.underline || false;
-                      applyTextFormatting({ underline: !isUnderline });
-                    }}
-                    style={[
-                      styles.formatButton,
-                      texts?.[editingIndex]?.underline && { backgroundColor: "#4a6cf7" },
-                    ]}
-                  >
-                    <Ionicons
-                      name="remove-outline"
-                      size={22}
-                      color={texts?.[editingIndex]?.underline ? "#fff" : "#333"}
-                    />
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        { color: texts?.[editingIndex]?.underline ? "#fff" : "#333" },
-                      ]}
-                    >
-                      Underline
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
-          </Modal>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.submitButton]}
-              onPress={() => {
-                pushToHistory?.();
-                if (editingIndex !== null && texts?.[editingIndex]) {
-                  const updated = [...texts];
-                  updated[editingIndex].value = textInputValue ?? "";
-                  updated[editingIndex].fontFamily = texts[editingIndex].bold
-                    ? fontMap[activeFont]?.bold || "System"
-                    : fontMap[activeFont]?.regular || "System";
-                  setTexts?.(updated);
-                } else {
-                  setTexts?.((prev) => [
-                    ...(prev ?? []),
-                    {
-                      value: textInputValue ?? "",
-                      x: displayWidth / 2 - 50,
-                      y: displayHeight / 2 - 20,
-                      scale: 1,
-                      rotation: 0,
-                      fontFamily: isBold
-                        ? fontMap[activeFont]?.bold || "System"
-                        : fontMap[activeFont]?.regular || "System",
-                      fontLabel: activeFont,
-                      color: "#ffffff",
-                      bold: isBold,
-                      italic: false,
-                      underline: false,
-                      fontSize: 26,
-                      textAlign: "left",
-                      locked: false,
-                      fontStyle: "normal",
-                      textDecorationLine: "none",
-                    },
-                  ]);
-                }
-                setModalVisible(false);
-                setTextInputValue("");
-                setEditingIndex(null);
-                setActiveFont("System");
-                setActiveModal(null);
-                setIsBold(false);
-              }}
-            >
-              <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-          </View>
+          </Animated.View>
         </View>
-      </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -378,42 +303,33 @@ const TextEditor = ({
 export default TextEditor;
 
 const styles = StyleSheet.create({
-  modalContainer: { flex: 1, justifyContent: "flex-end" },
   contentContainer: {
     backgroundColor: "#f5f5f5",
     padding: 20,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: "70%",
-    elevation: 10,
+    maxHeight: "50%",
+    marginTop: "auto",
   },
   headerContainer: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
   backText: { fontSize: 18, fontWeight: "bold", marginLeft: 10 },
-  textInput: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 12,
-    marginBottom: 15,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  iconOptionsContainer: { flexDirection: "row", justifyContent: "space-around", marginBottom: 15 },
-  iconButton: { justifyContent: "center", alignItems: "center" },
-  iconLabel: { fontSize: 12, color: "#333", marginTop: 4 },
-  footer: { flexDirection: "row", justifyContent: "flex-end", paddingTop: 10 },
-  modalButton: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, minWidth: 100, alignItems: "center" },
-  submitButton: { backgroundColor: "#007AFF" },
-  buttonText: { fontWeight: "600", color: "#fff" },
-  subModalContainer: { flex: 1, justifyContent: "flex-end" },
-  subHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 10, backgroundColor: "#f5f5f5", borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-  subHeaderText: { fontSize: 16, fontWeight: "bold", marginLeft: 10 },
-  subContent: { backgroundColor: "#f5f5f5", padding: 20, maxHeight: "40%" },
-  fontButton: { paddingVertical: 10, paddingHorizontal: 15, borderRadius: 8, backgroundColor: "#4a6cf7", margin: 5 },
+  optionRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 10 },
+  formatButton: { padding: 10, backgroundColor: "#eaeaea", borderRadius: 8, minWidth: 50, alignItems: "center", margin: 4 },
+  formatActive: { backgroundColor: "#4a6cf7" },
+  textInput: { backgroundColor: "#fff", padding: 12, borderRadius: 8, fontSize: 16, minHeight: 50 },
+  submitButton: { backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center" },
+  buttonText: { color: "#fff", fontWeight: "600" },
+  fontButton: { padding: 8, backgroundColor: "#4a6cf7", borderRadius: 8, marginRight: 10 },
   fontButtonActive: { backgroundColor: "#2c4fd8" },
-  fontText: { color: "#fff", fontSize: 16 },
-  sectionTitle: { fontSize: 14, fontWeight: "600", marginBottom: 8, color: "#555" },
-  optionRow: { flexDirection: "row", justifyContent: "space-around", marginBottom: 20 },
-  formatButton: { alignItems: "center", justifyContent: "center", padding: 10, borderRadius: 8, backgroundColor: "#eaeaea", minWidth: 70 },
-  optionLabel: { fontSize: 12, marginTop: 4, color: "#333" },
+  fontText: { color: "#fff" },
+  subModalContainer: {
+    backgroundColor: "#f5f5f5",
+    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    marginTop: "auto",
+    height: '30%',
+  },
+  colorButton: { width: 40, height: 40, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: "#ccc" },
+  colorButtonActive: { borderWidth: 3, borderColor: "#000" },
 });
