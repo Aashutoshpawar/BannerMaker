@@ -17,6 +17,7 @@ import Animated, {
   useAnimatedStyle,
   runOnJS,
 } from "react-native-reanimated";
+import LinearGradient from "react-native-linear-gradient";
 
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import EvilIcons from "react-native-vector-icons/EvilIcons";
@@ -439,12 +440,22 @@ const Canvas = () => {
       {/* Canvas Area */}
       <ScrollView contentContainerStyle={[styles.scrollContainer, { paddingTop: canvasTopMargin }]}>
         <View style={[styles.canvasArea, { width: displayWidth, height: displayHeight }]}>
+          {/* Background */}
           {background ? (
-            <Image
+            background.type === "gradient" ? (
+              <LinearGradient
+                colors={background.colors}
+                style={styles.backgroundImage}
+              />
+            ) : typeof background === "string" ? (
+              <Image
               source={typeof background === "string" ? { uri: background } : background}
               style={styles.backgroundImage}
               resizeMode="cover"
             />
+            ) : (
+              <Image source={background} style={styles.backgroundImage} resizeMode="cover" />
+            )
           ) : (
             <View style={[styles.backgroundImage, { backgroundColor: "#fff" }]} />
           )}
@@ -509,7 +520,7 @@ const Canvas = () => {
         pushToHistory={pushToHistory}
         activeFont={activeFont}
         setActiveFont={setActiveFont}
-        pointerEvents="box-none" // <--- Add this
+        pointerEvents="box-none"
       />
     </View>
   );

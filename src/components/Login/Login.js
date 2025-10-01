@@ -14,7 +14,7 @@ const Login = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.subcontainer}>
-        <Text style={styles.title}>Enter Your Mobile Number</Text>
+        <Text style={styles.title}>Enter Your Email</Text>
         <Text style={styles.subtitle}>
           We'll send you a verification code to get you started
         </Text>
