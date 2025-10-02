@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import GradientButton from "../../../constatnts/GradientButton";
 
 const Crop = () => {
   const navigation = useNavigation();

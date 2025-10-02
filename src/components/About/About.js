@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Linking, Share, ScrollView, Modal, FlatList } from 'react-native';
 import FontAwesome5Icon from 'react-native-vector-icons/FontAwesome5';
-import GradientButton from '../../constatnts/GradientButton';
+import GradientButton from '../../constants/GradientButton';
 import LinearGradient from "react-native-linear-gradient";
 
 

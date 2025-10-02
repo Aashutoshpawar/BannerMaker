@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TextInput, View, Text } from 'react-native';
 import styles from './login.css';
-import GradientButton from '../../constatnts/GradientButton';
+import GradientButton from '../../constants/GradientButton';
 
 const Login = ({ navigation }) => {
   const [phone, setPhone] = useState('');

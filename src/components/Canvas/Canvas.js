@@ -257,17 +257,17 @@ const Canvas = () => {
             <>
               {/* Delete */}
 
-              <GestureDetector
-                gesture={Gesture.Tap().onEnd(() => {
-                  runOnJS(() => {
+              <TouchableOpacity
+                onPress={() => {
+                  requestAnimationFrame(() => {
                     setTexts((prev) => prev.filter((_, i) => i !== index));
-                  })();
-                })}
+                  });
+                }}
+                style={[styles.handle, { top: -16, left: -16 }]}
               >
-                <Animated.View style={[styles.handle, { top: -16, left: -16 }]}>
-                  <AntDesign name="delete" size={16} color="white" />
-                </Animated.View>
-              </GestureDetector>
+                <AntDesign name="delete" size={16} color="white" />
+              </TouchableOpacity>
+
 
 
               {/* Rotate */}
@@ -449,10 +449,10 @@ const Canvas = () => {
               />
             ) : typeof background === "string" ? (
               <Image
-              source={typeof background === "string" ? { uri: background } : background}
-              style={styles.backgroundImage}
-              resizeMode="cover"
-            />
+                source={typeof background === "string" ? { uri: background } : background}
+                style={styles.backgroundImage}
+                resizeMode="cover"
+              />
             ) : (
               <Image source={background} style={styles.backgroundImage} resizeMode="cover" />
             )

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.6",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/slider": "^5.0.1",
     "@react-native-picker/picker": "^2.11.2",
     "@react-native/new-app-screen": "0.81.1",
@@ -31,6 +32,7 @@
     "react-native-image-crop-picker": "^0.51.0",
     "react-native-image-picker": "^8.2.1",
     "react-native-linear-gradient": "^2.8.3",
+    "react-native-modal": "^14.0.0-rc.1",
     "react-native-picker-select": "^9.3.1",
     "react-native-reanimated": "^4.1.0",
     "react-native-safe-area-context": "^5.6.1",
@@ -60,7 +62,7 @@
   "engines": {
     "node": ">=20"
   },
-  "rnpm":{
+  "rnpm": {
     "assets": [
       "./src/assets/fonts"
     ]

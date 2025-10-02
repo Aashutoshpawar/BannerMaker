@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, TextInput, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import styles from './otpscreen.css';
-import GradientButton from '../../constatnts/GradientButton';
+import GradientButton from '../../constants/GradientButton';
 
 const OtpScreen = ({ navigation }) => {
   const [otp, setOtp] = useState(['', '', '', '']);
