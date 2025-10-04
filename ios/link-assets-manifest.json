@@ -2,52 +2,92 @@
   "migIndex": 1,
   "data": [
     {
-      "path": "src/assets/fonts/FunnelDisplay-VariableFont_wght.ttf",
-      "sha1": "fd2a69397822520aeeb387566df062d1386e3287"
+      "path": "src/assets/fonts/Amita-Bold.ttf",
+      "sha1": "e2b3657609f6e6a7ad6b2ffc8304776c6ce7fb2d"
     },
     {
-      "path": "src/assets/fonts/Hind-Medium.ttf",
-      "sha1": "a14a624672d1d83538fb6903e4a5a19f5f382d36"
+      "path": "src/assets/fonts/Amita-Regular.ttf",
+      "sha1": "8abb63971b097f35e50ddcdca13c867cb77b29fe"
+    },
+    {
+      "path": "src/assets/fonts/Fredoka-Bold.ttf",
+      "sha1": "077ce63212ba3fc747e0de3221b997b217bc524d"
+    },
+    {
+      "path": "src/assets/fonts/Fredoka-Regular.ttf",
+      "sha1": "e57d10fc6325dcb8f26a6244036e352cc3819517"
+    },
+    {
+      "path": "src/assets/fonts/Fredoka_Condensed-Bold.ttf",
+      "sha1": "8f83da4214f26aebd0e309dc53332a042734428e"
+    },
+    {
+      "path": "src/assets/fonts/Fredoka_Condensed-Regular.ttf",
+      "sha1": "8e8f390b9a4681ad54f31c2efcb80aef83ec4c1f"
+    },
+    {
+      "path": "src/assets/fonts/Fredoka_Expanded-Bold.ttf",
+      "sha1": "147116680b1e3118f51fa93bdc4739fbc138a1c2"
+    },
+    {
+      "path": "src/assets/fonts/Fredoka_Expanded-Regular.ttf",
+      "sha1": "3d41802ff6d7d898002ea3bb2eaeeb1393d9820d"
+    },
+    {
+      "path": "src/assets/fonts/Hind-Bold.ttf",
+      "sha1": "d66e1dd248db79a3afb8e807ffab9b29ba0b9f59"
+    },
+    {
+      "path": "src/assets/fonts/Hind-Regular.ttf",
+      "sha1": "046abd8541e56d2dcd0071940133b91165625bf9"
+    },
+    {
+      "path": "src/assets/fonts/LobsterTwo-Bold.ttf",
+      "sha1": "22d16751379386a58202275f3cfcf9e51bc32a80"
     },
     {
       "path": "src/assets/fonts/LobsterTwo-Regular.ttf",
       "sha1": "1f9ffb9981ee8cc365b1ab1f1370421d62a36301"
     },
     {
-      "path": "src/assets/fonts/Mukta-Medium.ttf",
-      "sha1": "384b05376b3988a1a58c74c721b019f87e249b7f"
+      "path": "src/assets/fonts/Mukta-Bold.ttf",
+      "sha1": "a928d8465eb1a78f4c442c7f94a231041ff5bcac"
     },
     {
-      "path": "src/assets/fonts/OpenSans-VariableFont_wdth,wght.ttf",
-      "sha1": "f60d7a8d3e964d894ddf2628508c5bf01e6b6239"
+      "path": "src/assets/fonts/Mukta-Regular.ttf",
+      "sha1": "c7e02ce2f3fcc9faa6fbe659f4d108777b2f66df"
     },
     {
-      "path": "src/assets/fonts/Orbitron-VariableFont_wght.ttf",
-      "sha1": "1f13abb00f097178cda113ec970e8ad01e62c584"
+      "path": "src/assets/fonts/MuktaMalar-Bold.ttf",
+      "sha1": "3879dd61f6f5ed94396872ddae630cb84968f48d"
+    },
+    {
+      "path": "src/assets/fonts/MuktaMalar-Regular.ttf",
+      "sha1": "71fc7730563e9585c9fa05126c89427277a89b09"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Bold.ttf",
+      "sha1": "875cf0cecd647bcf22e79d633d868c1b1ec98dfa"
     },
     {
       "path": "src/assets/fonts/Poppins-Regular.ttf",
       "sha1": "fdd3002e7d814ee47c1c1b8487c72c6bbb3a2d00"
     },
     {
+      "path": "src/assets/fonts/PTSerif-Bold.ttf",
+      "sha1": "581675fd5d3734c5ee1506359190ce467c477e18"
+    },
+    {
       "path": "src/assets/fonts/PTSerif-Regular.ttf",
       "sha1": "9ea0ea4d9ed8fda292db458366dbd9af013eced7"
     },
     {
+      "path": "src/assets/fonts/Rajdhani-Bold.ttf",
+      "sha1": "d9c403532e310d0a470f959e65ed283a4f21d7a7"
+    },
+    {
       "path": "src/assets/fonts/Rajdhani-Regular.ttf",
       "sha1": "73f086047e7ff11a3087cd481f133f9080a9d954"
-    },
-    {
-      "path": "src/assets/fonts/RobotoCondensed-VariableFont_wght.ttf",
-      "sha1": "3b71c4d2889df966026f9a76614ee63d51434e43"
-    },
-    {
-      "path": "src/assets/fonts/Satisfy-Regular.ttf",
-      "sha1": "f2300fe434200d87a1f2c612784bb3fcd780f815"
-    },
-    {
-      "path": "src/assets/fonts/Teko-VariableFont_wght.ttf",
-      "sha1": "764efa2701415ce966602397cc656ccb3bd71b99"
     }
   ]
 }

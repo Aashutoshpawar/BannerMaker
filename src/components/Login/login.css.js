@@ -1,39 +1,59 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { height, width } = Dimensions.get('window');
 
 export default StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 20,
+    justifyContent: 'flex-start', // start from top
   },
-  subcontainer: {
+
+  // ✅ Logo section
+  imageWrapper: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop:250,
+    marginTop: height * 0.12, // top padding
+    marginBottom: height * 0.05,
   },
+  logo: {
+    width: width * 0.75,  // 50% of screen width
+    height: width * 0.5, // keep square ratio
+    resizeMode: 'contain',
+  },
+
+  // Form section
+  subcontainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    fontFamily:"Open Sans Regular",
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginVertical: 20,
-    color: '#333',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 25,
+    color: '#555',
     textAlign: 'center',
+    paddingHorizontal: 10,
   },
+
   inputWrapper: {
     width: '100%',
-    marginTop: 20,
+    marginBottom: 15,
   },
   header: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 5,
     color: '#333',
   },
   input: {
@@ -42,13 +62,18 @@ export default StyleSheet.create({
     backgroundColor: '#f2f2f2',
     borderRadius: 12,
     paddingHorizontal: 15,
-    marginBottom: 20,
     fontSize: 16,
     color: '#333',
   },
+  errorText: {
+    color: "#ff0000",
+    fontSize: 14,
+    marginTop: 5,
+  },
+
   buttonWrapper: {
-    marginTop: 10,
-    alignItems: 'center',
+    marginTop: 20,
     width: '100%',
+    alignItems: 'center',
   },
 });

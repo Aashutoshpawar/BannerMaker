@@ -24,7 +24,7 @@ export default StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginVertical: 30,
-    width: '80%',
+    width: '100%',
   },
   otpInput: {
     width: 55,
@@ -42,4 +42,23 @@ export default StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: -10,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 25, // adjust for status bar
+    left: 20,
+    zIndex: 10,
+    padding: 5,
+  },
+
+  backText: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 5,
+  },
+
 });

@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 
 const canvasSizes = [
-  { id: "1", label: "Square", size: "2000 x 2000", icon: "square-full", color: "#4b5563" },
-  { id: "2", label: "Poster", size: "612 x 792", icon: "file-alt", color: "#f59e0b" },
+  { id: "1", label: "YouTube Thumb", size: "1280 x 720", icon: "youtube", color: "#FF0000" },
+  { id: "2", label: "A4", size: "2480 x 3508", icon: "file-pdf", color: "#FF0000" },
   { id: "3", label: "Instagram", size: "1080 x 1080", icon: "instagram", color: "#E1306C" },
   { id: "4", label: "Facebook Cover", size: "1352 x 500", icon: "facebook", color: "#1877F2" },
-  { id: "5", label: "A4", size: "2480 x 3508", icon: "file-pdf", color: "#FF0000" },
+  { id: "5", label: "Poster", size: "612 x 792", icon: "file-alt", color: "#f59e0b" },
   { id: "6", label: "Insta Poster", size: "1080 x 1920", icon: "image", color: "#10b981" },
-  { id: "7", label: "YouTube Thumb", size: "1280 x 720", icon: "youtube", color: "#FF0000" },
+  { id: "7", label: "Square", size: "2000 x 2000", icon: "square-full", color: "#4b5563" },
 ];
 
 const Create = ({ navigation }) => {
@@ -64,11 +64,11 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   header: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: '#111',
-        marginBottom: 25,
-    },
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 25,
+  },
   listContainer: {
     paddingBottom: 20,
   },

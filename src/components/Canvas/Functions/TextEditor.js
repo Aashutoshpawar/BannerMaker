@@ -1,17 +1,33 @@
-// components/TextEditor.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  PanResponder,
+  Animated,
   KeyboardAvoidingView,
   Platform,
-  Modal,
-  ScrollView,
+  Modal, // ✅ add Modal import
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import ColorPicker from "react-native-wheel-color-picker";
+
+const fontMap = {
+  System: { regular: "System", bold: "System" },
+  Serif: { regular: "serif", bold: "serif" },
+  "Sans-Serif": { regular: "sans-serif", bold: "sans-serif" },
+  Monospace: { regular: "monospace", bold: "monospace" },
+  Cursive: { regular: "cursive", bold: "cursive" },
+  Fantasy: { regular: "fantasy", bold: "fantasy" },
+  "Times New Roman": { regular: "Times New Roman", bold: "Times New Roman" },
+  Arial: { regular: "Arial", bold: "Arial Bold" },
+  Helvetica: { regular: "Helvetica", bold: "Helvetica Bold" },
+};
 
 const TextEditor = ({
   modalVisible = false,
@@ -28,232 +44,352 @@ const TextEditor = ({
   activeFont = "System",
   setActiveFont = () => {},
 }) => {
-  const [activeModal, setActiveModal] = useState(null); // 'FontStyle', 'TextFormatting', etc.
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [fontModal, setFontModal] = useState(false);
+  const [colorModal, setColorModal] = useState(false);
+  const [textColor, setTextColor] = useState("#000");
+  const [isEdit, setIsEdit] = useState(false);
 
-  const fontStyles = [
-    { label: "sans-serif", fontFamily: "sans-serif" },
-    { label: "sans-serif-light", fontFamily: "sans-serif-light" },
-    { label: "sans-serif-thin", fontFamily: "sans-serif-thin" },
-    { label: "sans-serif-condensed", fontFamily: "sans-serif-condensed" },
-    { label: "sans-serif-medium", fontFamily: "sans-serif-medium" },
-    { label: "serif-monospace", fontFamily: "serif-monospace" },
-    { label: "sans-serif-smallcaps", fontFamily: "sans-serif-smallcaps" },
-    { label: "Courier", fontFamily: "Courier" },
-    { label: "Cochin", fontFamily: "Cochin" },
-    { label: "Optima", fontFamily: "Optima" },
-    { label: "Gill Sans", fontFamily: "Gill Sans" },
-    { label: "Baskerville", fontFamily: "Baskerville" },
-    { label: "Palatino", fontFamily: "Palatino" },
-  ];
+  const panY = useState(new Animated.Value(0))[0];
 
-  const options = [
-    { name: "Text Formatting", key: "TextFormatting", icon: "text" },
-    { name: "Font Style", key: "FontStyle", icon: "pencil" },
-    { name: "Outline & Disallow", key: "Outline", icon: "ban" },
-    { name: "Text Size", key: "TextSize", icon: "resize" },
-  ];
+  const resetPositionAnim = Animated.timing(panY, {
+    toValue: 0,
+    duration: 300,
+    useNativeDriver: true,
+  });
 
-  const applyFontStyle = (fontFamily) => {
-    setActiveFont(fontFamily);
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gestureState) =>
+      Math.abs(gestureState.dy) > 10,
+    onPanResponderMove: Animated.event([null, { dy: panY }], {
+      useNativeDriver: false,
+    }),
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dy > 100) {
+        setModalVisible(false);
+        panY.setValue(0);
+      } else {
+        resetPositionAnim.start();
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      const textObj = texts[editingIndex];
+      setIsBold(textObj.bold || false);
+      setIsItalic(textObj.italic || false);
+      setIsUnderline(textObj.underline || false);
+      setActiveFont(textObj.fontLabel || "System");
+      setTextColor(textObj.color || "#000");
+      setIsEdit(true);
+    } else {
+      setIsBold(false);
+      setIsItalic(false);
+      setIsUnderline(false);
+      setTextColor("#000");
+      setIsEdit(false);
+    }
+  }, [editingIndex, texts]);
+
+  const fontStyles = Object.keys(fontMap).map((label) => ({
+    label,
+    fontFamily: fontMap[label].regular,
+  }));
+
+  const getCurrentTextStyle = () => ({
+    fontFamily: fontMap[activeFont]?.regular || "System",
+    fontSize: 20,
+    fontStyle: isItalic ? "italic" : "normal",
+    textDecorationLine: isUnderline ? "underline" : "none",
+    color: textColor,
+    fontWeight: isBold ? "bold" : "normal",
+  });
+
+  const applyFontStyle = (fontLabel) => {
+    setActiveFont(fontLabel);
     if (editingIndex !== null && texts?.[editingIndex]) {
       setTexts((prev) =>
         prev.map((t, idx) =>
-          idx === editingIndex ? { ...t, fontFamily } : t
+          idx === editingIndex
+            ? { ...t, fontLabel, fontFamily: fontMap[fontLabel]?.regular || "System" }
+            : t
         )
       );
     }
-    setActiveModal(null);
+    setFontModal(false);
   };
 
   const applyTextFormatting = (format) => {
     if (editingIndex !== null && texts?.[editingIndex]) {
       setTexts((prev) =>
-        prev.map((t, idx) =>
-          idx === editingIndex ? { ...t, ...format } : t
-        )
+        prev.map((t, idx) => {
+          if (idx === editingIndex) {
+            const updated = { ...t };
+            if (format.bold !== undefined) updated.bold = format.bold;
+            if (format.italic !== undefined) updated.italic = format.italic;
+            if (format.underline !== undefined) updated.underline = format.underline;
+            return updated;
+          }
+          return t;
+        })
       );
     }
-    setActiveModal(null);
+    if (format.bold !== undefined) setIsBold(format.bold);
+    if (format.italic !== undefined) setIsItalic(format.italic);
+    if (format.underline !== undefined) setIsUnderline(format.underline);
+  };
+
+  const changeCase = (type) => {
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      const updated = texts.map((t, idx) => {
+        if (idx === editingIndex) {
+          let value = t.value || "";
+          if (type === "upper") value = value.toUpperCase();
+          else if (type === "lower") value = value.toLowerCase();
+          else if (type === "capitalize")
+            value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+          return { ...t, value };
+        }
+        return t;
+      });
+      setTexts(updated);
+    }
+  };
+
+  const applyColor = (color) => {
+    setTextColor(color);
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      setTexts((prev) =>
+        prev.map((t, idx) => (idx === editingIndex ? { ...t, color } : t))
+      );
+    }
+  };
+
+  const submitText = () => {
+    pushToHistory?.();
+    if (editingIndex !== null && texts?.[editingIndex]) {
+      const updated = [...texts];
+      updated[editingIndex] = {
+        ...updated[editingIndex],
+        value: textInputValue ?? "",
+        fontFamily: fontMap[activeFont]?.regular || "System",
+        fontLabel: activeFont,
+        color: textColor,
+        bold: isBold,
+        italic: isItalic,
+        underline: isUnderline,
+      };
+      setTexts(updated);
+    } else {
+      setTexts((prev) => [
+        ...(prev ?? []),
+        {
+          value: textInputValue ?? "",
+          x: displayWidth / 2 - 50,
+          y: displayHeight / 2 - 20,
+          scale: 1,
+          rotation: 0,
+          fontFamily: fontMap[activeFont]?.regular || "System",
+          fontLabel: activeFont,
+          color: textColor,
+          bold: isBold,
+          italic: isItalic,
+          underline: isUnderline,
+          fontSize: 26,
+          textAlign: "left",
+        },
+      ]);
+    }
+    setTextInputValue("");
+    setEditingIndex(null);
+    setModalVisible(false);
   };
 
   return (
-    <Modal
-      visible={modalVisible}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setModalVisible(false)}
-    >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}
-      >
-        <View style={styles.contentContainer}>
-          {/* Header */}
-          <View style={styles.headerContainer}>
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={{ flexDirection: "row", alignItems: "center" }}
+    <>
+      {/* === Main Bottom Sheet === */}
+      {modalVisible && (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={StyleSheet.absoluteFill}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ flex: 1, justifyContent: "flex-end" }}
             >
-              <Ionicons name="arrow-back" size={24} color="#000" />
-              <Text style={styles.backText}>
-                {editingIndex !== null ? "Edit Text" : "Add Text"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+              <Animated.View
+                style={[
+                  styles.contentContainer,
+                  { transform: [{ translateY: panY }] },
+                ]}
+                {...panResponder.panHandlers}
+              >
+                {/* Header */}
+                <View style={styles.headerContainer}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setModalVisible(false);
+                      setEditingIndex(null);
+                    }}
+                    style={{ flexDirection: "row", alignItems: "center" }}
+                  >
+                    <Ionicons name="arrow-back" size={24} color="#000" />
+                    <Text style={styles.backText}>
+                      {isEdit ? "Edit Text" : "Add Text"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
 
-          {/* Text Input */}
-          <TextInput
-            value={textInputValue ?? ""}
-            onChangeText={(text) => setTextInputValue(text ?? "")}
-            style={[styles.textInput, { fontFamily: activeFont ?? "System", fontSize: 20 }]}
-            placeholder="Type something..."
-          />
+                {/* Formatting Buttons */}
+                <View style={styles.optionRow}>
+                  <TouchableOpacity
+                    onPress={() => setIsBold(!isBold) || applyTextFormatting({ bold: !isBold })}
+                    style={[styles.formatButton, isBold && styles.formatActive]}
+                  >
+                    <Text style={{ fontWeight: "bold", color: isBold ? "#fff" : "#333" }}>B</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setIsItalic(!isItalic) || applyTextFormatting({ italic: !isItalic })}
+                    style={[styles.formatButton, isItalic && styles.formatActive]}
+                  >
+                    <Text style={{ fontStyle: "italic", color: isItalic ? "#fff" : "#333" }}>I</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setIsUnderline(!isUnderline) || applyTextFormatting({ underline: !isUnderline })}
+                    style={[styles.formatButton, isUnderline && styles.formatActive]}
+                  >
+                    <Text style={{ textDecorationLine: "underline", color: isUnderline ? "#fff" : "#333" }}>U</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => changeCase("upper")} style={styles.formatButton}><Text>UP</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => changeCase("lower")} style={styles.formatButton}><Text>low</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => changeCase("capitalize")} style={styles.formatButton}><Text>Cap</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => setFontModal(true)} style={styles.formatButton}><Text>Font</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => setColorModal(true)} style={styles.formatButton}>
+                    <Text style={{ color: textColor }}>Color</Text>
+                  </TouchableOpacity>
+                </View>
 
-          {/* Option Buttons */}
-          {editingIndex !== null && texts?.[editingIndex] && (
-            <View style={styles.iconOptionsContainer}>
-              {options.map((opt, i) => (
+                {/* Input */}
+                <TextInput
+                  value={textInputValue}
+                  onChangeText={setTextInputValue}
+                  placeholder="Type your text..."
+                  style={[styles.textInput, getCurrentTextStyle()]}
+                  multiline
+                />
+
+                {/* Submit */}
                 <TouchableOpacity
-                  key={i}
-                  style={styles.iconButton}
-                  onPress={() => setActiveModal(opt.key)}
+                  style={[styles.submitButton, { marginTop: 10 }]}
+                  onPress={submitText}
                 >
-                  <Ionicons name={opt.icon} size={28} color="#333" />
-                  <Text style={styles.iconLabel}>{opt.name}</Text>
+                  <Text style={styles.buttonText}>
+                    {isEdit ? "Update" : "Add Text"}
+                  </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          )}
+              </Animated.View>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      )}
 
-          {/* Font Style Modal */}
-          <Modal
-            visible={activeModal === "FontStyle"}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setActiveModal(null)}
-          >
+      {/* === Font Modal === */}
+      <Modal visible={fontModal} transparent animationType="slide">
+        <TouchableWithoutFeedback onPress={() => setFontModal(false)}>
+          <View style={styles.overlay}>
             <View style={styles.subModalContainer}>
-              <ScrollView style={styles.subContent}>
+              <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Font</Text>
+              <ScrollView horizontal>
                 {fontStyles.map((fs, i) => (
                   <TouchableOpacity
                     key={i}
                     style={[
                       styles.fontButton,
-                      activeFont === fs.fontFamily && styles.fontButtonActive,
+                      activeFont === fs.label && styles.fontButtonActive,
                     ]}
-                    onPress={() => applyFontStyle(fs.fontFamily)}
+                    onPress={() => applyFontStyle(fs.label)}
                   >
-                    <Text style={[styles.fontText, { fontFamily: fs.fontFamily }]}>
-                      {fs.label}
-                    </Text>
+                    <Text style={[styles.fontText, { fontFamily: fs.fontFamily }]}>{fs.label}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+              <TouchableOpacity
+                style={[styles.submitButton, { marginTop: 10 }]}
+                onPress={() => setFontModal(false)}
+              >
+                <Text style={styles.buttonText}>Close</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
-
-          {/* Text Formatting Modal */}
-          <Modal
-            visible={activeModal === "TextFormatting"}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setActiveModal(null)}
-          >
-            <View style={styles.subModalContainer}>
-              <View style={{ flexDirection: "row", justifyContent: "space-around", padding: 20 }}>
-                <TouchableOpacity onPress={() => applyTextFormatting({ bold: true })}>
-                  <Text style={{ fontWeight: "bold", fontSize: 18 }}>B</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyTextFormatting({ italic: true })}>
-                  <Text style={{ fontStyle: "italic", fontSize: 18 }}>I</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyTextFormatting({ underline: true })}>
-                  <Text style={{ textDecorationLine: "underline", fontSize: 18 }}>U</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.submitButton]}
-              onPress={() => {
-                pushToHistory?.();
-                if (editingIndex !== null && texts?.[editingIndex]) {
-                  const updated = [...texts];
-                  updated[editingIndex].value = textInputValue ?? "";
-                  updated[editingIndex].fontFamily = activeFont ?? "System";
-                  setTexts?.(updated);
-                } else {
-                  setTexts?.((prev) => [
-                    ...(prev ?? []),
-                    {
-                      value: textInputValue ?? "",
-                      x: displayWidth / 2 - 50,
-                      y: displayHeight / 2 - 20,
-                      scale: 1,
-                      rotation: 0,
-                      fontFamily: activeFont ?? "System",
-                      color: "#ffffff",
-                      bold: false,
-                      italic: false,
-                      underline: false,
-                      fontSize: 26,
-                      locked: false,
-                    },
-                  ]);
-                }
-                setModalVisible(false);
-                setTextInputValue("");
-                setEditingIndex(null);
-                setActiveFont("System");
-                setActiveModal(null);
-              }}
-            >
-              <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* === Color Modal === */}
+      <Modal visible={colorModal} transparent animationType="slide">
+        <TouchableWithoutFeedback onPress={() => setColorModal(false)}>
+          <View style={styles.overlay}>
+            <View style={styles.subModalContainer}>
+              <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Color</Text>
+              <View style={{ flex: 1, marginTop: 20 }}>
+                <ColorPicker
+                  color={textColor}
+                  onColorChange={(color) => setTextColor(color)}
+                  onColorChangeComplete={(color) => applyColor(color)}
+                  thumbSize={30}
+                  sliderHidden={false}
+                  style={{ flex: 1 }}
+                />
+              </View>
+              <TouchableOpacity
+                style={[styles.submitButton, { marginTop: 10 }]}
+                onPress={() => setColorModal(false)}
+              >
+                <Text style={styles.buttonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </>
   );
 };
 
 export default TextEditor;
 
 const styles = StyleSheet.create({
-  modalContainer: { flex: 1, justifyContent: "flex-end" },
   contentContainer: {
     backgroundColor: "#f5f5f5",
     padding: 20,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: "70%",
-    elevation: 10,
+    maxHeight: "60%",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   headerContainer: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
   backText: { fontSize: 18, fontWeight: "bold", marginLeft: 10 },
-  textInput: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 12,
-    marginBottom: 15,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  iconOptionsContainer: { flexDirection: "row", justifyContent: "space-around", marginBottom: 15 },
-  iconButton: { justifyContent: "center", alignItems: "center" },
-  iconLabel: { fontSize: 12, color: "#333", marginTop: 4 },
-  footer: { flexDirection: "row", justifyContent: "flex-end", paddingTop: 10 },
-  modalButton: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, minWidth: 100, alignItems: "center" },
-  submitButton: { backgroundColor: "#007AFF" },
-  buttonText: { fontWeight: "600", color: "#fff" },
-  subModalContainer: { flex: 1, justifyContent: "flex-end", },
-  subContent: { backgroundColor: "#f5f5f5", padding: 20, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: "50%" },
-  fontButton: { paddingVertical: 10, paddingHorizontal: 15, borderRadius: 8, backgroundColor: "#4a6cf7", margin: 5 },
+  optionRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 10 },
+  formatButton: { padding: 10, backgroundColor: "#eaeaea", borderRadius: 8, minWidth: 50, alignItems: "center", margin: 4 },
+  formatActive: { backgroundColor: "#4a6cf7" },
+  textInput: { backgroundColor: "#fff", padding: 12, borderRadius: 8, fontSize: 16, minHeight: 50 },
+  submitButton: { backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center" },
+  buttonText: { color: "#fff", fontWeight: "600" },
+  fontButton: { padding: 8, backgroundColor: "#4a6cf7", borderRadius: 8, marginRight: 10 },
   fontButtonActive: { backgroundColor: "#2c4fd8" },
-  fontText: { color: "#fff", fontSize: 16 },
+  fontText: { color: "#fff" },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  subModalContainer: {
+    backgroundColor: "#f5f5f5",
+    padding: 20,
+    height: "50%",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
 });
