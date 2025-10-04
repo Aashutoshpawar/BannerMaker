@@ -13,6 +13,7 @@ import styles from './otpscreen.css';
 import GradientButton from '../../constants/GradientButton';
 import { verifyOtp } from '../../store/services/authServices/authServices';
 import Ionicons from 'react-native-vector-icons/Ionicons'; // 👈 For back arrow icon
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const OtpScreen = ({ navigation, route }) => {
   const { email } = route.params;
@@ -58,6 +59,8 @@ const OtpScreen = ({ navigation, route }) => {
     verifyOtp(email, enteredOtp)
       .then((res) => {
         console.log('OTP verified successfully:', res);
+        console.log("this is the user id = ",res?.user?._id);
+        AsyncStorage.setItem("userId", res?.user?._id);
         navigation.navigate('MainPage');
       })
       .catch((err) => {

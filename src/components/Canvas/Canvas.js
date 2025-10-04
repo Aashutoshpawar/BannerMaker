@@ -23,16 +23,27 @@ import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import EvilIcons from "react-native-vector-icons/EvilIcons";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import ViewShot from "react-native-view-shot";
+import { CameraRoll } from "@react-native-camera-roll/camera-roll";
+import { PermissionsAndroid, Platform } from "react-native";
+
+
 
 import TextEditor from "./Functions/TextEditor";
 import StickerManager from "./Functions/StickerManager";
 import ImageUploader from "./Functions/ImageUploader";
 import BackgroundSelector from "./Functions/BackgroundSelector";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from "react-native/types_generated/Libraries/ReactNative/ReactFabricPublicInstance/ReactNativeAttributePayload";
+import { createProject } from "../../store/services/creationServices/CreationServices";
 
 const Canvas = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const viewShotRef = useRef();
+
   const { image, canvas } = route.params || {};
+  const [userId, setUserId] = useState(null);
 
   const [activeFont, setActiveFont] = useState("System");
   const [stickers, setStickers] = useState([]);
@@ -50,6 +61,95 @@ const Canvas = () => {
 
   const bottomSheetRef = useRef(null);
   const snapPoints = useMemo(() => ["25%", "40%"], []);
+
+
+  React.useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await AsyncStorage.getItem("userId");
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+
+
+  const getCanvasLayersData = () => {
+    const canvasData = {
+      userId: userId, // replace with actual user id
+      isDraft: true,
+      canvas: {
+        width: canvasWidth,
+        height: canvasHeight,
+      },
+      texts: texts.map((t, idx) => ({
+        id: t.id || `text${idx + 1}`,
+        value: t.value,
+        font: t.fontFamily || "System",
+        size: t.fontSize || 24,
+        color: t.color || "#000000",
+        opacity: t.opacity ?? 1,
+        bold: t.bold || false,
+        italic: t.italic || false,
+        underline: t.underline || false,
+        format: t.format || "none",
+        align: t.align || "left",
+        rotation: t.rotation ?? 0,
+        scale: t.scale ?? 1,
+        x: t.x ?? 0,
+        y: t.y ?? 0,
+      })),
+      stickers: stickers.map((s, idx) => ({
+        id: s.id || `sticker${idx + 1}`,
+        uri: s.uri,
+        opacity: s.opacity ?? 1,
+        hue: s.hue ?? 0,
+        rotation: s.rotation ?? 0,
+        scale: s.scale ?? 1,
+        x: s.x ?? 0,
+        y: s.y ?? 0,
+      })),
+      images: [], // Add your uploaded images array if any
+      background: background
+        ? background.type === "gradient"
+          ? {
+            isGradient: true,
+            gradientColors: background.colors || ["#fff", "#000"],
+            image: null,
+          }
+          : {
+            isGradient: false,
+            gradientColors: [],
+            image: typeof background === "string" ? background : null,
+          }
+        : null,
+    };
+
+    return canvasData;
+  };
+
+  const requestStoragePermission = async () => {
+    if (Platform.OS !== "android") return true;
+
+    try {
+      if (Platform.Version >= 33) {
+        // Android 13+
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } else {
+        // Android 12 and below
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+    } catch (err) {
+      console.warn("Permission error:", err);
+      return false;
+    }
+  };
+
 
   // ---------- Undo / Redo / Save ----------
   const pushToHistory = () => {
@@ -86,10 +186,49 @@ const Canvas = () => {
     setRedoStack((prev) => prev.slice(0, prev.length - 1));
   };
 
-  const save = () => {
-    setSavedState({ stickers: [...stickers], texts: [...texts], background });
-    Alert.alert("Saved", "Your canvas has been saved!");
+  // const save = () => {
+  //   setSavedState({ stickers: [...stickers], texts: [...texts], background });
+  //   Alert.alert("Saved", "Your canvas has been saved!");
+  // };
+  // ---------- Save Canvas ----------
+  const saveToGallery = async () => {
+    // try {
+    //   const hasPermission = await requestStoragePermission();
+    //   if (!hasPermission) {
+    //     Alert.alert("Permission Denied", "Cannot save without storage permission");
+    //     return;
+    //   }
+
+    //   // Capture the canvas as PNG for transparency
+    //   const uri = await viewShotRef.current.capture({
+    //     format: "png",
+    //     quality: 1,
+    //     result: "tmpfile", // temporary file path
+    //   });
+
+    //   console.log("Captured image path:", uri);
+
+    //   await CameraRoll.save(uri, { type: "photo" });
+    //   Alert.alert("Saved", "Canvas saved to gallery!");
+    // } catch (error) {
+    //   console.error("Error saving canvas:", error);
+    //   Alert.alert("Error", "Failed to save canvas.");
+    // }
+    const payload = getCanvasLayersData();
+    console.log("Payload to send:", payload);
+
+    createProject(payload)
+      .then((data) => {
+        console.log("Project created successfully:", data);
+      })
+      .catch((error) => {
+        console.error("Error creating project:", error);
+        console.log("Payload was:", payload);
+      });
   };
+
+
+
 
   const discard = () => {
     if (savedState) {
@@ -203,6 +342,9 @@ const Canvas = () => {
           rotationValue.value
         );
       });
+
+    // Function to get full canvas layers data
+
 
     const animatedStyle = useAnimatedStyle(() => ({
       position: "absolute",
@@ -431,44 +573,54 @@ const Canvas = () => {
           <TouchableOpacity style={styles.button} onPress={redo}>
             <EvilIcons name="redo" size={30} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={save}>
+          <TouchableOpacity style={styles.button} onPress={saveToGallery}>
             <AntDesign name="download" size={24} color="black" />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Canvas Area */}
-      <ScrollView contentContainerStyle={[styles.scrollContainer, { paddingTop: canvasTopMargin }]}>
-        <View style={[styles.canvasArea, { width: displayWidth, height: displayHeight }]}>
-          {/* Background */}
-          {background ? (
-            background.type === "gradient" ? (
-              <LinearGradient
-                colors={background.colors}
-                style={styles.backgroundImage}
-              />
-            ) : typeof background === "string" ? (
-              <Image
-                source={typeof background === "string" ? { uri: background } : background}
-                style={styles.backgroundImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <Image source={background} style={styles.backgroundImage} resizeMode="cover" />
-            )
-          ) : (
-            <View style={[styles.backgroundImage, { backgroundColor: "#fff" }]} />
-          )}
+      <ScrollView
+        contentContainerStyle={[styles.scrollContainer, { paddingTop: canvasTopMargin }]}
+      >
+        <ViewShot
+          ref={viewShotRef}
+          options={{ format: "png", quality: 1 }}
+          style={{ width: displayWidth, height: displayHeight }}
+        >
+          <View
+            style={{
+              width: displayWidth,
+              height: displayHeight,
+              backgroundColor: "transparent", // transparent background
+              overflow: "hidden",
+              borderRadius: 8,
+            }}
+          >
+            {/* Background */}
+            {background ? (
+              background.type === "gradient" ? (
+                <LinearGradient colors={background.colors} style={styles.backgroundImage} />
+              ) : typeof background === "string" ? (
+                <Image source={{ uri: background }} style={styles.backgroundImage} resizeMode="cover" />
+              ) : (
+                <Image source={background} style={styles.backgroundImage} resizeMode="cover" />
+              )
+            ) : null}
 
-          {stickers.map((item, index) => (
-            <DraggableStickerMemo key={`sticker-${index}`} item={item} index={index} />
-          ))}
+            {/* Stickers */}
+            {stickers.map((item, index) => (
+              <DraggableStickerMemo key={`sticker-${index}`} item={item} index={index} />
+            ))}
 
-          {texts.map((item, index) => (
-            <DraggableTextMemo key={`text-${index}`} item={item} index={index} />
-          ))}
-        </View>
+            {/* Texts */}
+            {texts.map((item, index) => (
+              <DraggableTextMemo key={`text-${index}`} item={item} index={index} />
+            ))}
+          </View>
+        </ViewShot>
       </ScrollView>
+
 
       {/* Controls */}
       <View style={styles.controls}>
