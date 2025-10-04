@@ -1,51 +1,90 @@
-// services/api.js
+// services/axiosInstance.js
 import axios from "axios";
-import appConfig from "../../constantnts/appConfig"; // make sure path is correct
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import appConfig from "../../constants/appConfig";
 
-const API = axios.create({
-  baseURL: appConfig.baseUrl, // ✅ fixed
-  headers: {
-    "Content-Type": "application/json",
+const BASE_URL = appConfig.baseUrl;
+
+const api = axios.create({
+  baseURL: BASE_URL,
+  timeout: 10000, // 10s timeout
+});
+
+// --- Request Interceptor ---
+api.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
   },
-});
+  (error) => Promise.reject(error)
+);
 
-// Add access token to requests
-API.interceptors.request.use(async (config) => {
-  const accessToken = await AsyncStorage.getItem("accessToken");
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-  return config;
-});
+// --- Response Interceptor ---
+let isRefreshing = false;
+let failedQueue = [];
 
-// Handle expired tokens
-API.interceptors.response.use(
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (
-      (error.response?.status === 401 || error.response?.status === 403) &&
-      !originalRequest._retry // prevent infinite loop
-    ) {
+    // If token expired
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = "Bearer " + token;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+
       try {
         const refreshToken = await AsyncStorage.getItem("refreshToken");
-        if (refreshToken) {
-          const res = await axios.post(`${appConfig.baseUrl}/refresh_token`, { refreshToken });
+        if (!refreshToken) throw new Error("No refresh token found");
 
-          // Save new tokens
-          await AsyncStorage.setItem("accessToken", res.data.accessToken);
-          await AsyncStorage.setItem("refreshToken", res.data.refreshToken);
+        const res = await axios.post(`${BASE_URL}/auth/refresh_token`, {
+          refreshToken,
+        });
 
-          // Retry the failed request with new token
-          originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
-          return API.request(originalRequest);
-        }
+        const newAccessToken = res.data.accessToken;
+        const newRefreshToken = res.data.refreshToken;
+
+        // Save new tokens
+        await AsyncStorage.setItem("accessToken", newAccessToken);
+        await AsyncStorage.setItem("refreshToken", newRefreshToken);
+
+        api.defaults.headers.common["Authorization"] =
+          "Bearer " + newAccessToken;
+
+        processQueue(null, newAccessToken);
+        return api(originalRequest);
       } catch (err) {
-        console.log("Token refresh failed:", err);
-        // TODO: Optionally clear tokens & redirect user to login
+        processQueue(err, null);
+        await AsyncStorage.removeItem("accessToken");
+        await AsyncStorage.removeItem("refreshToken");
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
       }
     }
 
@@ -53,4 +92,4 @@ API.interceptors.response.use(
   }
 );
 
-export default API;
+export default api;

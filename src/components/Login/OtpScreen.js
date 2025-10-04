@@ -1,10 +1,24 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, TextInput, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ActivityIndicator,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import styles from './otpscreen.css';
 import GradientButton from '../../constants/GradientButton';
+import { verifyOtp } from '../../store/services/authServices/authServices';
+import Ionicons from 'react-native-vector-icons/Ionicons'; // 👈 For back arrow icon
 
-const OtpScreen = ({ navigation }) => {
-  const [otp, setOtp] = useState(['', '', '', '']);
+const OtpScreen = ({ navigation, route }) => {
+  const { email } = route.params;
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const inputRefs = useRef([]);
 
   const handleChange = (text, index) => {
@@ -13,7 +27,7 @@ const OtpScreen = ({ navigation }) => {
       newOtp[index] = text;
       setOtp(newOtp);
 
-      if (index < 3) {
+      if (index < 5) {
         inputRefs.current[index + 1].focus();
       } else {
         Keyboard.dismiss();
@@ -32,18 +46,46 @@ const OtpScreen = ({ navigation }) => {
   };
 
   const handleVerify = () => {
+    setError('');
     const enteredOtp = otp.join('');
-    console.log('Entered OTP:', enteredOtp);
-    // if (enteredOtp.length === 4) {
-      navigation.navigate('MainPage');
-    // } else {
-    //   alert('Please enter all 4 digits');
-    // }
+
+    if (enteredOtp.length < 6) {
+      setError('Please enter all 6 digits');
+      return;
+    }
+
+    setLoading(true);
+    verifyOtp(email, enteredOtp)
+      .then((res) => {
+        console.log('OTP verified successfully:', res);
+        navigation.navigate('MainPage');
+      })
+      .catch((err) => {
+        console.log('Error verifying OTP:', err);
+        setError('Invalid OTP. Please try again.');
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
+
+        {/* 👈 Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={25} color="#333" />
+        </TouchableOpacity>
+        <View style={styles.imageWrapper}>
+          <Image
+            source={require("../../assets/LoginStickers/Otpscreen.png")} // Replace with your image path
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+
         <Text style={styles.title}>Enter OTP</Text>
         <Text style={styles.subtitle}>We’ve sent a code to your mobile</Text>
 
@@ -52,18 +94,24 @@ const OtpScreen = ({ navigation }) => {
             <TextInput
               key={index}
               ref={(ref) => (inputRefs.current[index] = ref)}
-              style={styles.otpInput}
+              style={[styles.otpInput, error ? { borderColor: 'red' } : {}]}
               keyboardType="number-pad"
               maxLength={1}
               value={digit}
               onChangeText={(text) => handleChange(text, index)}
-              onKeyPress={(e) => handleKeyPress(e, index)} // 👈 handles backspace
+              onKeyPress={(e) => handleKeyPress(e, index)}
             />
           ))}
         </View>
 
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <View style={styles.buttonWrapper}>
-          <GradientButton title="Verify" onPress={handleVerify} />
+          <GradientButton
+            title={loading ? <ActivityIndicator size="small" color="#fff" /> : 'Verify'}
+            onPress={handleVerify}
+            disabled={loading}
+          />
         </View>
       </View>
     </TouchableWithoutFeedback>

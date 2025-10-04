@@ -1,38 +1,21 @@
 // services/authService.js
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import appConfig from "../../../constants/appConfig";
-
-const BASE_URL = appConfig.baseUrl;
+import api from "../api";
 
 // ---------------- SEND OTP ----------------
 export const sendOtp = async (email) => {
-  const res = await axios.post(`${BASE_URL}/send_otp`, { email });
-  console.log("OTP sent response:", res.data);
-  return res.data; // { message: "OTP sent successfully" }
+  const response = await api.post("/auth/send_otp", { email });
+  return response.data;
 };
 
 // ---------------- VERIFY OTP ----------------
 export const verifyOtp = async (email, otp) => {
-  const res = await axios.post(`${BASE_URL}/verify_otp`, { email, otp });
+  const response = await api.post("/auth/verify_otp", { email, otp });
 
-  await AsyncStorage.setItem("accessToken", res.data.accessToken);
-  await AsyncStorage.setItem("refreshToken", res.data.refreshToken);
+  await AsyncStorage.setItem("accessToken", response.data.accessToken);
+  await AsyncStorage.setItem("refreshToken", response.data.refreshToken);
 
-  return res.data; // { accessToken, refreshToken, user }
-};
-
-// ---------------- REFRESH TOKEN ----------------
-export const refreshAccessToken = async () => {
-  const refreshToken = await AsyncStorage.getItem("refreshToken");
-  if (!refreshToken) throw new Error("No refresh token available");
-
-  const res = await axios.post(`${BASE_URL}/refresh_token`, { refreshToken });
-
-  await AsyncStorage.setItem("accessToken", res.data.accessToken);
-  await AsyncStorage.setItem("refreshToken", res.data.refreshToken);
-
-  return res.data; // { accessToken, refreshToken }
+  return response.data;
 };
 
 // ---------------- LOGOUT ----------------
@@ -40,7 +23,7 @@ export const logout = async () => {
   const refreshToken = await AsyncStorage.getItem("refreshToken");
 
   if (refreshToken) {
-    await axios.post(`${BASE_URL}/logout`, { refreshToken });
+    await api.post("/auth/logout", { refreshToken });
   }
 
   await AsyncStorage.removeItem("accessToken");
