@@ -28,32 +28,32 @@ const Login = ({ navigation }) => {
 
   const handleOTP = () => {
     // Reset previous error
-    setError("");
+    // setError("");
 
     // Validate email
-    if (!email.trim()) {
-      setError("Email is required");
-      return;
-    }
+    // if (!email.trim()) {
+    //   setError("Email is required");
+    //   return;
+    // }
 
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
+    // if (!validateEmail(email)) {
+    //   setError("Please enter a valid email address");
+    //   return;
+    // }
 
     // Show loader
-    setLoading(true);
+    // setLoading(true);
 
-    sendOtp(email)
-      .then(() => {
-        console.log("OTP sent to:", email);
+    // sendOtp(email)
+    //   .then(() => {
+    //     console.log("OTP sent to:", email);
         navigation.navigate("OTPScreen", { email });
-      })
-      .catch((err) => {
-        console.log("Error sending OTP:", err);
-        setError("Failed to send OTP. Please try again.");
-      })
-      .finally(() => setLoading(false));
+      // })
+      // .catch((err) => {
+      //   console.log("Error sending OTP:", err);
+      //   setError("Failed to send OTP. Please try again.");
+      // })
+      // .finally(() => setLoading(false));
   };
 
   return (
@@ -69,7 +69,7 @@ const Login = ({ navigation }) => {
           <View style={styles.container}>
             <View style={styles.imageWrapper}>
               <Image
-                source={require("../../assets/LoginStickers/Loginscreen.png")} // Replace with your image path
+                source={require("../../assets/LoginStickers/Loginscreen.jpg")} // Replace with your image path
                 style={styles.logo}
                 resizeMode="contain"
               />

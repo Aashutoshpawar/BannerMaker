@@ -1,6 +1,7 @@
 // services/authService.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../api";
+import { add } from "react-native/types_generated/Libraries/Animated/AnimatedExports";
 
 // ---------------- SEND OTP ----------------
 export const sendOtp = async (email) => {
