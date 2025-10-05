@@ -59,6 +59,8 @@ export default StyleSheet.create({
     color: '#007BFF',
   },
   templateTile: {
+    elevation: 5,
+    marginBottom: 10,
     marginRight: 10,
     borderRadius: 10,
     overflow: 'hidden',
