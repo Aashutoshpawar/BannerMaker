@@ -1,9 +1,14 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const tileMargin = 10;
+const tileWidth = (width - 3 * tileMargin) / 2; 
+// (2 tiles per row) → left + right padding + spacing between
 
 export default StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    padding: tileMargin,
     backgroundColor: '#fff',
   },
   header: {
@@ -12,17 +17,22 @@ export default StyleSheet.create({
     marginBottom: 20,
   },
   draftTile: {
-    width: 150,
+    width: tileWidth,
     height: 210,
-    marginRight: 15,
     borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   draftImage: {
     width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  emptyTile: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#eee',
   },
   draftTitle: {
     marginTop: 8,
