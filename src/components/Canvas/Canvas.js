@@ -195,28 +195,52 @@ const Canvas = () => {
   // };
   // ---------- Save Canvas ----------
   const saveToGallery = async () => {
-    // try {
-    //   const hasPermission = await requestStoragePermission();
-    //   if (!hasPermission) {
-    //     Alert.alert("Permission Denied", "Cannot save without storage permission");
-    //     return;
-    //   }
+    try {
+      const hasPermission = await requestStoragePermission();
+      if (!hasPermission) {
+        Alert.alert("Permission Denied", "Cannot save without storage permission");
+        return;
+      }
 
-    //   // Capture the canvas as PNG for transparency
-    //   const uri = await viewShotRef.current.capture({
-    //     format: "png",
-    //     quality: 1,
-    //     result: "tmpfile", // temporary file path
-    //   });
+      // Capture the canvas as PNG for transparency
+      const uri = await viewShotRef.current.capture({
+        format: "png",
+        quality: 1,
+        result: "tmpfile", // temporary file path
+      });
 
-    //   console.log("Captured image path:", uri);
+      console.log("Captured image path:", uri);
 
-    //   await CameraRoll.save(uri, { type: "photo" });
-    //   Alert.alert("Saved", "Canvas saved to gallery!");
-    // } catch (error) {
-    //   console.error("Error saving canvas:", error);
-    //   Alert.alert("Error", "Failed to save canvas.");
-    // }
+      await CameraRoll.save(uri, { type: "photo" });
+      // Alert.alert("Saved", "Canvas saved to gallery!");
+      Alert.alert(
+        "Confirmation",
+        "Are you sure you want save the Template?",
+        [
+          { text: "No", style: "cancel" },
+          {
+            text: "Yes",
+            onPress: async () => {
+              setLoading(true); // ⬅️ Show loader
+              try {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Home' }],
+                });
+              } catch (e) {
+                console.log("error:", e);
+              } finally {
+                setLoading(false); // ⬅️ Hide loader
+              }
+            }
+          }
+        ],
+        { cancelable: true }
+      );
+    } catch (error) {
+      console.error("Error saving canvas:", error);
+      Alert.alert("Error", "Failed to save canvas.");
+    }
     const payload = getCanvasLayersData();
     console.log("Payload to send:", payload);
 
@@ -436,154 +460,154 @@ const Canvas = () => {
   };
 
   // ---------- Draggable Sticker ----------
-// Update the DraggableSticker component in Canvas.js with this enhanced version
+  // Update the DraggableSticker component in Canvas.js with this enhanced version
 
-const DraggableSticker = ({ item, index }) => {
-  const [selected, setSelected] = useState(false);
+  const DraggableSticker = ({ item, index }) => {
+    const [selected, setSelected] = useState(false);
 
-  const translateX = useSharedValue(item.x ?? 50);
-  const translateY = useSharedValue(item.y ?? 50);
-  const scaleValue = useSharedValue(item.scale ?? 1);
-  const rotationValue = useSharedValue(item.rotation ?? 0);
+    const translateX = useSharedValue(item.x ?? 50);
+    const translateY = useSharedValue(item.y ?? 50);
+    const scaleValue = useSharedValue(item.scale ?? 1);
+    const rotationValue = useSharedValue(item.rotation ?? 0);
 
-  // Main drag
-  const drag = Gesture.Pan()
-    .onChange((e) => {
-      translateX.value += e.changeX;
-      translateY.value += e.changeY;
-    })
-    .onEnd(() => {
-      runOnJS(updateStickerPosition)(
-        index,
-        translateX.value,
-        translateY.value,
-        scaleValue.value,
-        rotationValue.value
-      );
-    });
+    // Main drag
+    const drag = Gesture.Pan()
+      .onChange((e) => {
+        translateX.value += e.changeX;
+        translateY.value += e.changeY;
+      })
+      .onEnd(() => {
+        runOnJS(updateStickerPosition)(
+          index,
+          translateX.value,
+          translateY.value,
+          scaleValue.value,
+          rotationValue.value
+        );
+      });
 
-  // Rotate handle
-  const rotateGesture = Gesture.Pan()
-    .onChange((e) => {
-      rotationValue.value += e.changeX * 0.01;
-    })
-    .onEnd(() => {
-      runOnJS(updateStickerPosition)(
-        index,
-        translateX.value,
-        translateY.value,
-        scaleValue.value,
-        rotationValue.value
-      );
-    });
+    // Rotate handle
+    const rotateGesture = Gesture.Pan()
+      .onChange((e) => {
+        rotationValue.value += e.changeX * 0.01;
+      })
+      .onEnd(() => {
+        runOnJS(updateStickerPosition)(
+          index,
+          translateX.value,
+          translateY.value,
+          scaleValue.value,
+          rotationValue.value
+        );
+      });
 
-  // Scale handle
-  const scaleGesture = Gesture.Pan()
-    .onChange((e) => {
-      scaleValue.value += e.changeX * 0.005;
-      if (scaleValue.value < 0.2) scaleValue.value = 0.2;
-    })
-    .onEnd(() => {
-      runOnJS(updateStickerPosition)(
-        index,
-        translateX.value,
-        translateY.value,
-        scaleValue.value,
-        rotationValue.value
-      );
-    });
+    // Scale handle
+    const scaleGesture = Gesture.Pan()
+      .onChange((e) => {
+        scaleValue.value += e.changeX * 0.005;
+        if (scaleValue.value < 0.2) scaleValue.value = 0.2;
+      })
+      .onEnd(() => {
+        runOnJS(updateStickerPosition)(
+          index,
+          translateX.value,
+          translateY.value,
+          scaleValue.value,
+          rotationValue.value
+        );
+      });
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    position: "absolute",
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scaleValue.value },
-      { rotateZ: `${rotationValue.value}rad` },
-    ],
-  }));
+    const animatedStyle = useAnimatedStyle(() => ({
+      position: "absolute",
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { scale: scaleValue.value },
+        { rotateZ: `${rotationValue.value}rad` },
+      ],
+    }));
 
-  // Get opacity and hue from item
-  const opacity = item.opacity ?? 1;
-  const hue = item.hue ?? 0;
+    // Get opacity and hue from item
+    const opacity = item.opacity ?? 1;
+    const hue = item.hue ?? 0;
 
-  return (
-    <GestureDetector gesture={drag}>
-      <Animated.View style={[animatedStyle]}>
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => {
-            setSelected(true);
-            runOnJS(setSelectedStickerIndex)(index);
-          }}
-        >
-          <View
-            style={[
-              selected && {
-                borderWidth: 1,
-                borderStyle: "dashed",
-                borderColor: "#007AFF",
-                padding: 4,
-              },
-            ]}
+    return (
+      <GestureDetector gesture={drag}>
+        <Animated.View style={[animatedStyle]}>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => {
+              setSelected(true);
+              runOnJS(setSelectedStickerIndex)(index);
+            }}
           >
-            <Image
-              source={{ uri: item.uri }}
+            <View
               style={[
-                { width: 80, height: 80 },
-                {
-                  opacity: opacity,
-                  // CSS filter alternative for React Native
-                  tintColor: hue !== 0 ? `hsl(${hue}, 100%, 50%)` : undefined,
+                selected && {
+                  borderWidth: 1,
+                  borderStyle: "dashed",
+                  borderColor: "#007AFF",
+                  padding: 4,
                 },
               ]}
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
-
-        {selected && (
-          <>
-            {/* Delete */}
-            <TouchableOpacity
-              onPress={() => {
-                runOnJS(setSelectedStickerIndex)(null);
-                setStickers((prev) => prev.filter((_, i) => i !== index));
-              }}
-              style={[styles.handle, { top: -16, left: -16, backgroundColor: "#FF3B30" }]}
             >
-              <AntDesign name="delete" size={16} color="white" />
-            </TouchableOpacity>
+              <Image
+                source={{ uri: item.uri }}
+                style={[
+                  { width: 80, height: 80 },
+                  {
+                    opacity: opacity,
+                    // CSS filter alternative for React Native
+                    tintColor: hue !== 0 ? `hsl(${hue}, 100%, 50%)` : undefined,
+                  },
+                ]}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
 
-            {/* Edit */}
-            <TouchableOpacity
-              onPress={() => {
-                runOnJS(setSelectedStickerIndex)(index);
-              }}
-              style={[styles.handle, { top: -16, right: -16, backgroundColor: "#007AFF" }]}
-            >
-              <MaterialDesignIcons name="palette" size={16} color="white" />
-            </TouchableOpacity>
+          {selected && (
+            <>
+              {/* Delete */}
+              <TouchableOpacity
+                onPress={() => {
+                  runOnJS(setSelectedStickerIndex)(null);
+                  setStickers((prev) => prev.filter((_, i) => i !== index));
+                }}
+                style={[styles.handle, { top: -16, left: -16, backgroundColor: "#FF3B30" }]}
+              >
+                <AntDesign name="delete" size={16} color="white" />
+              </TouchableOpacity>
 
-            {/* Rotate */}
-            <GestureDetector gesture={rotateGesture}>
-              <Animated.View style={[styles.handle, { bottom: -16, left: -16, backgroundColor: "#34C759" }]}>
-                <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
-              </Animated.View>
-            </GestureDetector>
+              {/* Edit */}
+              <TouchableOpacity
+                onPress={() => {
+                  runOnJS(setSelectedStickerIndex)(index);
+                }}
+                style={[styles.handle, { top: -16, right: -16, backgroundColor: "#007AFF" }]}
+              >
+                <MaterialDesignIcons name="palette" size={16} color="white" />
+              </TouchableOpacity>
 
-            {/* Scale */}
-            <GestureDetector gesture={scaleGesture}>
-              <Animated.View style={[styles.handle, { bottom: -16, right: -16, backgroundColor: "#FF9500" }]}>
-                <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
-              </Animated.View>
-            </GestureDetector>
-          </>
-        )}
-      </Animated.View>
-    </GestureDetector>
-  );
-};
+              {/* Rotate */}
+              <GestureDetector gesture={rotateGesture}>
+                <Animated.View style={[styles.handle, { bottom: -16, left: -16, backgroundColor: "#34C759" }]}>
+                  <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
+                </Animated.View>
+              </GestureDetector>
+
+              {/* Scale */}
+              <GestureDetector gesture={scaleGesture}>
+                <Animated.View style={[styles.handle, { bottom: -16, right: -16, backgroundColor: "#FF9500" }]}>
+                  <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
+                </Animated.View>
+              </GestureDetector>
+            </>
+          )}
+        </Animated.View>
+      </GestureDetector>
+    );
+  };
 
   const DraggableTextMemo = React.memo(DraggableText);
   const DraggableStickerMemo = React.memo(DraggableSticker);

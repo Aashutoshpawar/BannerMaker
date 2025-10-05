@@ -12,7 +12,7 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
-  Modal, // ✅ add Modal import
+  StyleSheet as RNStyleSheet,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ColorPicker from "react-native-wheel-color-picker";
@@ -47,8 +47,8 @@ const TextEditor = ({
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
-  const [fontModal, setFontModal] = useState(false);
-  const [colorModal, setColorModal] = useState(false);
+  const [fontSheetVisible, setFontSheetVisible] = useState(false);
+  const [colorSheetVisible, setColorSheetVisible] = useState(false);
   const [textColor, setTextColor] = useState("#000");
   const [isEdit, setIsEdit] = useState(false);
 
@@ -119,7 +119,7 @@ const TextEditor = ({
         )
       );
     }
-    setFontModal(false);
+    setFontSheetVisible(false);
   };
 
   const applyTextFormatting = (format) => {
@@ -208,21 +208,80 @@ const TextEditor = ({
     setModalVisible(false);
   };
 
+  // ========= Font Sheet Pan =========
+  const fontSheetY = useState(new Animated.Value(400))[0];
+  const fontSheetPan = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 10,
+    onPanResponderMove: Animated.event([null, { dy: fontSheetY }], { useNativeDriver: false }),
+    onPanResponderRelease: (_, g) => {
+      if (g.dy > 100) setFontSheetVisible(false);
+      Animated.timing(fontSheetY, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    },
+  });
+
+  useEffect(() => {
+    if (fontSheetVisible) {
+      Animated.timing(fontSheetY, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fontSheetY, {
+        toValue: 400,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [fontSheetVisible]);
+
+  // ========= Color Sheet Pan =========
+  const colorSheetY = useState(new Animated.Value(400))[0];
+  const colorSheetPan = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 10,
+    onPanResponderMove: Animated.event([null, { dy: colorSheetY }], { useNativeDriver: false }),
+    onPanResponderRelease: (_, g) => {
+      if (g.dy > 100) setColorSheetVisible(false);
+      Animated.timing(colorSheetY, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    },
+  });
+
+  useEffect(() => {
+    if (colorSheetVisible) {
+      Animated.timing(colorSheetY, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(colorSheetY, {
+        toValue: 400,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [colorSheetVisible]);
+
   return (
     <>
       {/* === Main Bottom Sheet === */}
       {modalVisible && (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={StyleSheet.absoluteFill}>
+          <View style={RNStyleSheet.absoluteFill}>
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
               style={{ flex: 1, justifyContent: "flex-end" }}
             >
               <Animated.View
-                style={[
-                  styles.contentContainer,
-                  { transform: [{ translateY: panY }] },
-                ]}
+                style={[styles.contentContainer, { transform: [{ translateY: panY }] }]}
                 {...panResponder.panHandlers}
               >
                 {/* Header */}
@@ -243,29 +302,20 @@ const TextEditor = ({
 
                 {/* Formatting Buttons */}
                 <View style={styles.optionRow}>
-                  <TouchableOpacity
-                    onPress={() => setIsBold(!isBold) || applyTextFormatting({ bold: !isBold })}
-                    style={[styles.formatButton, isBold && styles.formatActive]}
-                  >
+                  <TouchableOpacity onPress={() => applyTextFormatting({ bold: !isBold })} style={[styles.formatButton, isBold && styles.formatActive]}>
                     <Text style={{ fontWeight: "bold", color: isBold ? "#fff" : "#333" }}>B</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setIsItalic(!isItalic) || applyTextFormatting({ italic: !isItalic })}
-                    style={[styles.formatButton, isItalic && styles.formatActive]}
-                  >
+                  <TouchableOpacity onPress={() => applyTextFormatting({ italic: !isItalic })} style={[styles.formatButton, isItalic && styles.formatActive]}>
                     <Text style={{ fontStyle: "italic", color: isItalic ? "#fff" : "#333" }}>I</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setIsUnderline(!isUnderline) || applyTextFormatting({ underline: !isUnderline })}
-                    style={[styles.formatButton, isUnderline && styles.formatActive]}
-                  >
+                  <TouchableOpacity onPress={() => applyTextFormatting({ underline: !isUnderline })} style={[styles.formatButton, isUnderline && styles.formatActive]}>
                     <Text style={{ textDecorationLine: "underline", color: isUnderline ? "#fff" : "#333" }}>U</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => changeCase("upper")} style={styles.formatButton}><Text>UP</Text></TouchableOpacity>
                   <TouchableOpacity onPress={() => changeCase("lower")} style={styles.formatButton}><Text>low</Text></TouchableOpacity>
                   <TouchableOpacity onPress={() => changeCase("capitalize")} style={styles.formatButton}><Text>Cap</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => setFontModal(true)} style={styles.formatButton}><Text>Font</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={() => setColorModal(true)} style={styles.formatButton}>
+                  <TouchableOpacity onPress={() => setFontSheetVisible(true)} style={styles.formatButton}><Text>Font</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => setColorSheetVisible(true)} style={styles.formatButton}>
                     <Text style={{ color: textColor }}>Color</Text>
                   </TouchableOpacity>
                 </View>
@@ -280,13 +330,8 @@ const TextEditor = ({
                 />
 
                 {/* Submit */}
-                <TouchableOpacity
-                  style={[styles.submitButton, { marginTop: 10 }]}
-                  onPress={submitText}
-                >
-                  <Text style={styles.buttonText}>
-                    {isEdit ? "Update" : "Add Text"}
-                  </Text>
+                <TouchableOpacity style={[styles.submitButton, { marginTop: 10 }]} onPress={submitText}>
+                  <Text style={styles.buttonText}>{isEdit ? "Update" : "Add Text"}</Text>
                 </TouchableOpacity>
               </Animated.View>
             </KeyboardAvoidingView>
@@ -294,63 +339,56 @@ const TextEditor = ({
         </TouchableWithoutFeedback>
       )}
 
-      {/* === Font Modal === */}
-      <Modal visible={fontModal} transparent animationType="slide">
-        <TouchableWithoutFeedback onPress={() => setFontModal(false)}>
-          <View style={styles.overlay}>
-            <View style={styles.subModalContainer}>
-              <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Font</Text>
-              <ScrollView horizontal>
-                {fontStyles.map((fs, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={[
-                      styles.fontButton,
-                      activeFont === fs.label && styles.fontButtonActive,
-                    ]}
-                    onPress={() => applyFontStyle(fs.label)}
-                  >
-                    <Text style={[styles.fontText, { fontFamily: fs.fontFamily }]}>{fs.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              <TouchableOpacity
-                style={[styles.submitButton, { marginTop: 10 }]}
-                onPress={() => setFontModal(false)}
-              >
-                <Text style={styles.buttonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+      {/* === Font Bottom Sheet === */}
+      {fontSheetVisible && (
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={() => setFontSheetVisible(false)}>
+            <View style={RNStyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
+          <Animated.View
+            style={[styles.subModalContainer, { transform: [{ translateY: fontSheetY }] }]}
+            {...fontSheetPan.panHandlers}
+          >
+            <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Font</Text>
+            <ScrollView>
+              {fontStyles.map((fs, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.fontButton, activeFont === fs.label && styles.fontButtonActive]}
+                  onPress={() => applyFontStyle(fs.label)}
+                >
+                  <Text style={[styles.fontText, { fontFamily: fs.fontFamily }]}>{fs.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        </View>
+      )}
 
-      {/* === Color Modal === */}
-      <Modal visible={colorModal} transparent animationType="slide">
-        <TouchableWithoutFeedback onPress={() => setColorModal(false)}>
-          <View style={styles.overlay}>
-            <View style={styles.subModalContainer}>
-              <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Color</Text>
-              <View style={{ flex: 1, marginTop: 20 }}>
-                <ColorPicker
-                  color={textColor}
-                  onColorChange={(color) => setTextColor(color)}
-                  onColorChangeComplete={(color) => applyColor(color)}
-                  thumbSize={30}
-                  sliderHidden={false}
-                  style={{ flex: 1 }}
-                />
-              </View>
-              <TouchableOpacity
-                style={[styles.submitButton, { marginTop: 10 }]}
-                onPress={() => setColorModal(false)}
-              >
-                <Text style={styles.buttonText}>Close</Text>
-              </TouchableOpacity>
+      {/* === Color Bottom Sheet === */}
+      {colorSheetVisible && (
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={() => setColorSheetVisible(false)}>
+            <View style={RNStyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
+          <Animated.View
+            style={[styles.subModalContainer, { transform: [{ translateY: colorSheetY }] }]}
+            {...colorSheetPan.panHandlers}
+          >
+            <Text style={{ fontWeight: "bold", marginBottom: 10 }}>Select Color</Text>
+            <View style={{ flex: 1, marginTop: 20 }}>
+              <ColorPicker
+                color={textColor}
+                onColorChange={(c) => setTextColor(c)}
+                onColorChangeComplete={(c) => applyColor(c)}
+                thumbSize={30}
+                sliderHidden={false}
+                style={{ flex: 1 }}
+              />
             </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+          </Animated.View>
+        </View>
+      )}
     </>
   );
 };
@@ -377,18 +415,19 @@ const styles = StyleSheet.create({
   textInput: { backgroundColor: "#fff", padding: 12, borderRadius: 8, fontSize: 16, minHeight: 50 },
   submitButton: { backgroundColor: "#007AFF", padding: 12, borderRadius: 8, alignItems: "center" },
   buttonText: { color: "#fff", fontWeight: "600" },
-  fontButton: { padding: 8, backgroundColor: "#4a6cf7", borderRadius: 8, marginRight: 10 },
+  fontButton: { padding: 10, backgroundColor: "#4a6cf7", borderRadius: 8, marginBottom: 8 },
   fontButtonActive: { backgroundColor: "#2c4fd8" },
   fontText: { color: "#fff" },
   overlay: {
-    flex: 1,
+    ...RNStyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
+    zIndex: 10000,
   },
   subModalContainer: {
     backgroundColor: "#f5f5f5",
     padding: 20,
-    height: "50%",
+    maxHeight: "60%",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
   },

@@ -47,27 +47,27 @@ const OtpScreen = ({ navigation, route }) => {
   };
 
   const handleVerify = () => {
-    // setError('');
-    // const enteredOtp = otp.join('');
+    setError('');
+    const enteredOtp = otp.join('');
 
-    // if (enteredOtp.length < 6) {
-    //   setError('Please enter all 6 digits');
-    //   return;
-    // }
+    if (enteredOtp.length < 6) {
+      setError('Please enter all 6 digits');
+      return;
+    }
 
-    // setLoading(true);
-    // verifyOtp(email, enteredOtp)
-    //   .then((res) => {
-    //     console.log('OTP verified successfully:', res);
-    //     console.log("this is the user id = ",res?.user?._id);
-    //     AsyncStorage.setItem("userId", res?.user?._id);
+    setLoading(true);
+    verifyOtp(email, enteredOtp)
+      .then((res) => {
+        console.log('OTP verified successfully:', res);
+        console.log("this is the user id = ", res?.user?._id);
+        AsyncStorage.setItem("userId", res?.user?._id);
         navigation.navigate('MainPage');
-      // })
-      // .catch((err) => {
-      //   console.log('Error verifying OTP:', err);
-      //   setError('Invalid OTP. Please try again.');
-      // })
-      // .finally(() => setLoading(false));
+      })
+      .catch((err) => {
+        console.log('Error verifying OTP:', err);
+        setError('Invalid OTP. Please try again.');
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
