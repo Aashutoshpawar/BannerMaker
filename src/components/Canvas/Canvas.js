@@ -189,10 +189,6 @@ const Canvas = () => {
     setRedoStack((prev) => prev.slice(0, prev.length - 1));
   };
 
-  // const save = () => {
-  //   setSavedState({ stickers: [...stickers], texts: [...texts], background });
-  //   Alert.alert("Saved", "Your canvas has been saved!");
-  // };
   // ---------- Save Canvas ----------
   const saveToGallery = async () => {
     try {
@@ -546,7 +542,7 @@ const Canvas = () => {
                 selected && {
                   borderWidth: 1,
                   borderStyle: "dashed",
-                  borderColor: "#007AFF",
+                  borderColor: "#000",
                   padding: 4,
                 },
               ]}
@@ -574,31 +570,31 @@ const Canvas = () => {
                   runOnJS(setSelectedStickerIndex)(null);
                   setStickers((prev) => prev.filter((_, i) => i !== index));
                 }}
-                style={[styles.handle, { top: -16, left: -16, backgroundColor: "#FF3B30" }]}
+                style={[styles.handle, { top: -16, left: -16, backgroundColor: "#000" }]}
               >
                 <AntDesign name="delete" size={16} color="white" />
               </TouchableOpacity>
 
               {/* Edit */}
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={() => {
                   runOnJS(setSelectedStickerIndex)(index);
                 }}
-                style={[styles.handle, { top: -16, right: -16, backgroundColor: "#007AFF" }]}
+                style={[styles.handle, { top: -16, right: -16, backgroundColor: "#000" }]}
               >
                 <MaterialDesignIcons name="palette" size={16} color="white" />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {/* Rotate */}
               <GestureDetector gesture={rotateGesture}>
-                <Animated.View style={[styles.handle, { bottom: -16, left: -16, backgroundColor: "#34C759" }]}>
-                  <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
+                <Animated.View style={[styles.handle, { bottom: -16, left: -16, backgroundColor: "#000" }]}>
+                  <MaterialDesignIcons name="rotate-3d-variant" size={16} color="white" />
                 </Animated.View>
               </GestureDetector>
 
               {/* Scale */}
               <GestureDetector gesture={scaleGesture}>
-                <Animated.View style={[styles.handle, { bottom: -16, right: -16, backgroundColor: "#FF9500" }]}>
+                <Animated.View style={[styles.handle, { bottom: -16, right: -16, backgroundColor: "#000" }]}>
                   <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
                 </Animated.View>
               </GestureDetector>
