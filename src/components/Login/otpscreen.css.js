@@ -38,7 +38,7 @@ export default StyleSheet.create({
     backgroundColor: '#f9f9f9',
   },
   buttonWrapper: {
-    marginTop: 20,
+
     width: '100%',
     alignItems: 'center',
   },
@@ -60,5 +60,10 @@ export default StyleSheet.create({
     color: '#333',
     marginLeft: 5,
   },
+  logo:{
+    width: 400,
+    marginBottom: -300,
+    marginTop: -300,
+  }
 
 });

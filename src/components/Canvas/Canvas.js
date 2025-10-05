@@ -59,6 +59,9 @@ const Canvas = () => {
   const [editingIndex, setEditingIndex] = useState(null);
   const [textEditorVisible, setTextEditorVisible] = useState(false);
 
+  const [selectedStickerIndex, setSelectedStickerIndex] = useState(null);
+
+
   const bottomSheetRef = useRef(null);
   const snapPoints = useMemo(() => ["25%", "40%"], []);
 
@@ -433,127 +436,154 @@ const Canvas = () => {
   };
 
   // ---------- Draggable Sticker ----------
-  const DraggableSticker = ({ item, index }) => {
-    const [selected, setSelected] = useState(false);
+// Update the DraggableSticker component in Canvas.js with this enhanced version
 
-    const translateX = useSharedValue(item.x ?? 50);
-    const translateY = useSharedValue(item.y ?? 50);
-    const scaleValue = useSharedValue(item.scale ?? 1);
-    const rotationValue = useSharedValue(item.rotation ?? 0);
+const DraggableSticker = ({ item, index }) => {
+  const [selected, setSelected] = useState(false);
 
-    // Main drag
-    const drag = Gesture.Pan()
-      .onChange((e) => {
-        translateX.value += e.changeX;
-        translateY.value += e.changeY;
-      })
-      .onEnd(() => {
-        runOnJS(updateStickerPosition)(
-          index,
-          translateX.value,
-          translateY.value,
-          scaleValue.value,
-          rotationValue.value
-        );
-      });
+  const translateX = useSharedValue(item.x ?? 50);
+  const translateY = useSharedValue(item.y ?? 50);
+  const scaleValue = useSharedValue(item.scale ?? 1);
+  const rotationValue = useSharedValue(item.rotation ?? 0);
 
-    // Rotate handle
-    const rotateGesture = Gesture.Pan()
-      .onChange((e) => {
-        rotationValue.value += e.changeX * 0.01;
-      })
-      .onEnd(() => {
-        runOnJS(updateStickerPosition)(
-          index,
-          translateX.value,
-          translateY.value,
-          scaleValue.value,
-          rotationValue.value
-        );
-      });
+  // Main drag
+  const drag = Gesture.Pan()
+    .onChange((e) => {
+      translateX.value += e.changeX;
+      translateY.value += e.changeY;
+    })
+    .onEnd(() => {
+      runOnJS(updateStickerPosition)(
+        index,
+        translateX.value,
+        translateY.value,
+        scaleValue.value,
+        rotationValue.value
+      );
+    });
 
-    // Scale handle
-    const scaleGesture = Gesture.Pan()
-      .onChange((e) => {
-        scaleValue.value += e.changeX * 0.005;
-        if (scaleValue.value < 0.2) scaleValue.value = 0.2;
-      })
-      .onEnd(() => {
-        runOnJS(updateStickerPosition)(
-          index,
-          translateX.value,
-          translateY.value,
-          scaleValue.value,
-          rotationValue.value
-        );
-      });
+  // Rotate handle
+  const rotateGesture = Gesture.Pan()
+    .onChange((e) => {
+      rotationValue.value += e.changeX * 0.01;
+    })
+    .onEnd(() => {
+      runOnJS(updateStickerPosition)(
+        index,
+        translateX.value,
+        translateY.value,
+        scaleValue.value,
+        rotationValue.value
+      );
+    });
 
-    const animatedStyle = useAnimatedStyle(() => ({
-      position: "absolute",
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { scale: scaleValue.value },
-        { rotateZ: `${rotationValue.value}rad` },
-      ],
-    }));
+  // Scale handle
+  const scaleGesture = Gesture.Pan()
+    .onChange((e) => {
+      scaleValue.value += e.changeX * 0.005;
+      if (scaleValue.value < 0.2) scaleValue.value = 0.2;
+    })
+    .onEnd(() => {
+      runOnJS(updateStickerPosition)(
+        index,
+        translateX.value,
+        translateY.value,
+        scaleValue.value,
+        rotationValue.value
+      );
+    });
 
-    return (
-      <GestureDetector gesture={drag}>
-        <Animated.View style={[animatedStyle]}>
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setSelected(true)}
+  const animatedStyle = useAnimatedStyle(() => ({
+    position: "absolute",
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scaleValue.value },
+      { rotateZ: `${rotationValue.value}rad` },
+    ],
+  }));
+
+  // Get opacity and hue from item
+  const opacity = item.opacity ?? 1;
+  const hue = item.hue ?? 0;
+
+  return (
+    <GestureDetector gesture={drag}>
+      <Animated.View style={[animatedStyle]}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {
+            setSelected(true);
+            runOnJS(setSelectedStickerIndex)(index);
+          }}
+        >
+          <View
+            style={[
+              selected && {
+                borderWidth: 1,
+                borderStyle: "dashed",
+                borderColor: "#007AFF",
+                padding: 4,
+              },
+            ]}
           >
-            <View
+            <Image
+              source={{ uri: item.uri }}
               style={[
-                selected && {
-                  borderWidth: 1,
-                  borderStyle: "dashed",
-                  borderColor: "black",
-                  padding: 4,
+                { width: 80, height: 80 },
+                {
+                  opacity: opacity,
+                  // CSS filter alternative for React Native
+                  tintColor: hue !== 0 ? `hsl(${hue}, 100%, 50%)` : undefined,
                 },
               ]}
+              resizeMode="contain"
+            />
+          </View>
+        </TouchableOpacity>
+
+        {selected && (
+          <>
+            {/* Delete */}
+            <TouchableOpacity
+              onPress={() => {
+                runOnJS(setSelectedStickerIndex)(null);
+                setStickers((prev) => prev.filter((_, i) => i !== index));
+              }}
+              style={[styles.handle, { top: -16, left: -16, backgroundColor: "#FF3B30" }]}
             >
-              <Image
-                source={{ uri: item.uri }}
-                style={{ width: 80, height: 80 }}
-                resizeMode="contain"
-              />
-            </View>
-          </TouchableOpacity>
+              <AntDesign name="delete" size={16} color="white" />
+            </TouchableOpacity>
 
-          {selected && (
-            <>
-              {/* Delete */}
-              <TouchableOpacity
-                onPress={() =>
-                  setStickers((prev) => prev.filter((_, i) => i !== index))
-                }
-                style={[styles.handle, { top: -16, left: -16 }]}
-              >
-                <AntDesign name="delete" size={16} color="white" />
-              </TouchableOpacity>
+            {/* Edit */}
+            <TouchableOpacity
+              onPress={() => {
+                runOnJS(setSelectedStickerIndex)(index);
+              }}
+              style={[styles.handle, { top: -16, right: -16, backgroundColor: "#007AFF" }]}
+            >
+              <MaterialDesignIcons name="palette" size={16} color="white" />
+            </TouchableOpacity>
 
-              {/* Rotate */}
-              <GestureDetector gesture={rotateGesture}>
-                <Animated.View style={[styles.handle, { bottom: -16, left: -16 }]}>
-                  <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
-                </Animated.View>
-              </GestureDetector>
+            {/* Rotate */}
+            <GestureDetector gesture={rotateGesture}>
+              <Animated.View style={[styles.handle, { bottom: -16, left: -16, backgroundColor: "#34C759" }]}>
+                <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
+              </Animated.View>
+            </GestureDetector>
 
-              {/* Scale */}
-              <GestureDetector gesture={scaleGesture}>
-                <Animated.View style={[styles.handle, { bottom: -16, right: -16 }]}>
-                  <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
-                </Animated.View>
-              </GestureDetector>
-            </>
-          )}
-        </Animated.View>
-      </GestureDetector>
-    );
-  };
+            {/* Scale */}
+            <GestureDetector gesture={scaleGesture}>
+              <Animated.View style={[styles.handle, { bottom: -16, right: -16, backgroundColor: "#FF9500" }]}>
+                <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
+              </Animated.View>
+            </GestureDetector>
+          </>
+        )}
+      </Animated.View>
+    </GestureDetector>
+  );
+};
 
   const DraggableTextMemo = React.memo(DraggableText);
   const DraggableStickerMemo = React.memo(DraggableSticker);
@@ -639,10 +669,13 @@ const Canvas = () => {
         <StickerManager
           pushToHistory={pushToHistory}
           setStickers={setStickers}
-          bottomSheetRef={bottomSheetRef}
+          stickers={stickers}
+          selectedStickerIndex={selectedStickerIndex}
+          setSelectedStickerIndex={setSelectedStickerIndex}
           displayWidth={displayWidth}
           displayHeight={displayHeight}
         />
+
 
         <ImageUploader
           pushToHistory={pushToHistory}

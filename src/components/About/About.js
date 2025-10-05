@@ -10,11 +10,13 @@ import {
     Modal,
     FlatList,
     Alert,
+    ActivityIndicator
 } from 'react-native';
 import FontAwesome5Icon from 'react-native-vector-icons/FontAwesome5';
 import GradientButton from '../../constants/GradientButton';
 import LinearGradient from "react-native-linear-gradient";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {logout} from "../../store/services/authServices/authServices";
 
 const languages = [
     { id: 'en', title: 'English' },
@@ -32,6 +34,7 @@ const languages = [
 const About = ({ navigation }) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedLang, setSelectedLang] = useState('English');
+    const [loading, setLoading] = useState(false); // ⬅️ loader state
 
     const settingsOptions = [
         { id: '1', title: 'Change Language', icon: 'language', onPress: () => setModalVisible(true) },
@@ -67,23 +70,30 @@ const About = ({ navigation }) => {
         </TouchableOpacity>
     );
 
-    // ✅ Logout confirmation alert
+    // ✅ Logout confirmation with loader
     const handleLogout = () => {
         Alert.alert(
             "Confirmation",
             "Are you sure you want to logout?",
             [
-                {
-                    text: "No",
-                    onPress: () => console.log("Logout cancelled"),
-                    style: "cancel"
-                },
+                { text: "No", style: "cancel" },
                 {
                     text: "Yes",
-                    onPress: () => {
-                        navigation.navigate('Login')
-                        AsyncStorage.clear();
-
+                    onPress: async () => {
+                        setLoading(true); // ⬅️ Show loader
+                        try {
+                            await logout();
+                            await AsyncStorage.clear();
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            });
+                            console.log("Logged out successfully");
+                        } catch (e) {
+                            console.log("Logout error:", e);
+                        } finally {
+                            setLoading(false); // ⬅️ Hide loader
+                        }
                     }
                 }
             ],
@@ -92,71 +102,69 @@ const About = ({ navigation }) => {
     };
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            <Text style={styles.header}>Settings</Text>
+        <>
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+                <Text style={styles.header}>Settings</Text>
 
-            {/* App Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>App</Text>
-                {settingsOptions.map(renderOption)}
-            </View>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>App</Text>
+                    {settingsOptions.map(renderOption)}
+                </View>
 
-            {/* Support Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Support</Text>
-                {supportOptions.map(renderOption)}
-            </View>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Support</Text>
+                    {supportOptions.map(renderOption)}
+                </View>
 
-            {/* Logout */}
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <GradientButton title="Log out" onPress={handleLogout} />
-            </TouchableOpacity>
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <GradientButton title="Log out" onPress={handleLogout} />
+                </TouchableOpacity>
 
-            {/* Language Modal */}
-            <Modal visible={modalVisible} transparent animationType="slide">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>Select Language</Text>
-                        <FlatList
-                            data={languages}
-                            keyExtractor={(item) => item.id}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[
-                                        styles.languageOption,
-                                        selectedLang === item.title && styles.languageSelected,
-                                    ]}
-                                    onPress={() => {
-                                        setSelectedLang(item.title);
-                                        setModalVisible(false);
-                                    }}
-                                >
-                                    <Text style={styles.languageText}>{item.title}</Text>
-                                </TouchableOpacity>
-                            )}
-                        />
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                            <Text style={styles.closeText}>Cancel</Text>
-                        </TouchableOpacity>
+                {/* Language Modal */}
+                <Modal visible={modalVisible} transparent animationType="slide">
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>Select Language</Text>
+                            <FlatList
+                                data={languages}
+                                keyExtractor={(item) => item.id}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.languageOption,
+                                            selectedLang === item.title && styles.languageSelected,
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedLang(item.title);
+                                            setModalVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.languageText}>{item.title}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.closeText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
+                </Modal>
+            </ScrollView>
+
+            {/* ⏳ Loader Modal */}
+            <Modal visible={loading} transparent animationType="fade">
+                <View style={styles.loaderOverlay}>
+                    <ActivityIndicator size="large" color="#fff" />
+                    <Text style={styles.loaderText}>Logging out...</Text>
                 </View>
             </Modal>
-        </ScrollView>
+        </>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-        padding: 15,
-    },
-    header: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: '#111',
-        marginBottom: 25,
-    },
+    container: { flex: 1, backgroundColor: '#f9fafb', padding: 15 },
+    header: { fontSize: 28, fontWeight: '700', color: '#111', marginBottom: 25 },
     section: {
         backgroundColor: '#fff',
         borderRadius: 12,
@@ -169,92 +177,34 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 2,
     },
-    sectionTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#6b7280',
-        marginBottom: 8,
-        marginLeft: 5,
-    },
-    option: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 14,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#e5e7eb',
-    },
-    optionText: {
-        fontSize: 16,
-        color: '#111',
-        fontWeight: '500',
-    },
-    logoutButton: {
-        marginTop: 30,
-        paddingVertical: 16,
-        alignItems: 'center',
-        borderRadius: 12,
-    },
-    gradientBorder: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 12,
-        padding: 2,
-    },
-    innerCircle: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    modalOverlay: {
+    sectionTitle: { fontSize: 14, fontWeight: '600', color: '#6b7280', marginBottom: 8, marginLeft: 5 },
+    option: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e5e7eb' },
+    optionText: { fontSize: 16, color: '#111', fontWeight: '500' },
+    logoutButton: { marginTop: 30, paddingVertical: 16, alignItems: 'center', borderRadius: 12 },
+    gradientBorder: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", marginRight: 12, padding: 2 },
+    innerCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+    modalContainer: { width: '85%', backgroundColor: '#fff', borderRadius: 12, padding: 20 },
+    modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 15, textAlign: 'center' },
+    languageOption: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ddd' },
+    languageText: { fontSize: 16, textAlign: 'center', color: '#111' },
+    languageSelected: { backgroundColor: '#e0f2fe', borderRadius: 6 },
+    closeButton: { marginTop: 15, paddingVertical: 12, backgroundColor: '#ef4444', borderRadius: 8 },
+    closeText: { color: '#fff', fontSize: 16, textAlign: 'center', fontWeight: '600' },
+
+    loaderOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'center'
     },
-    modalContainer: {
-        width: '85%',
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 20,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        marginBottom: 15,
-        textAlign: 'center',
-    },
-    languageOption: {
-        paddingVertical: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#ddd',
-    },
-    languageText: {
-        fontSize: 16,
-        textAlign: 'center',
-        color: '#111',
-    },
-    languageSelected: {
-        backgroundColor: '#e0f2fe',
-        borderRadius: 6,
-    },
-    closeButton: {
-        marginTop: 15,
-        paddingVertical: 12,
-        backgroundColor: '#ef4444',
-        borderRadius: 8,
-    },
-    closeText: {
+    loaderText: {
         color: '#fff',
         fontSize: 16,
-        textAlign: 'center',
-        fontWeight: '600',
-    },
+        marginTop: 10,
+        fontWeight: '500'
+    }
 });
 
 export default About;
