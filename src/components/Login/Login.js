@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TextInput,
   View,
@@ -14,11 +14,29 @@ import {
 import styles from "./login.css";
 import GradientButton from "../../constants/GradientButton";
 import { sendOtp } from "../../store/services/authServices/authServices";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(""); // ✅ Validation error state
+  const [error, setError] = useState("");
+
+  // ✅ Check login status once on mount
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem("refreshToken");
+        if (token) {
+          // If token exists, redirect user to Home screen
+          navigation.replace("MainPage");
+        }
+      } catch (err) {
+        console.log("Error checking login status:", err);
+      }
+    };
+
+    checkLoginStatus();
+  }, [navigation]);
 
   // Email validation function
   const validateEmail = (email) => {
@@ -27,7 +45,6 @@ const Login = ({ navigation }) => {
   };
 
   const handleOTP = () => {
-    // Reset previous error
     setError("");
 
     // Validate email
@@ -41,7 +58,6 @@ const Login = ({ navigation }) => {
       return;
     }
 
-    // Show loader
     setLoading(true);
 
     sendOtp(email)
@@ -69,11 +85,12 @@ const Login = ({ navigation }) => {
           <View style={styles.container}>
             <View style={styles.imageWrapper}>
               <Image
-                source={require("../../assets/LoginStickers/Loginscreen.jpg")} // Replace with your image path
+                source={require("../../assets/LoginStickers/Loginscreen.jpg")}
                 style={styles.logo}
                 resizeMode="contain"
               />
             </View>
+
             <View style={styles.subcontainer}>
               <Text style={styles.title}>Enter Your Email</Text>
               <Text style={styles.subtitle}>
@@ -93,7 +110,7 @@ const Login = ({ navigation }) => {
                   value={email}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  onFocus={() => setError("")} // clear error when user focuses
+                  onFocus={() => setError("")}
                 />
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
               </View>
@@ -108,7 +125,7 @@ const Login = ({ navigation }) => {
                     )
                   }
                   onPress={handleOTP}
-                  disabled={loading} // prevent multiple clicks
+                  disabled={loading}
                 />
               </View>
             </View>
