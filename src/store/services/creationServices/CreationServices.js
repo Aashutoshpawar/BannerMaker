@@ -17,7 +17,6 @@ export const getProjectByUserID = async (Data) => {
         return response.data;
     } catch (error) {
         console.error("something went wrong:", error);
-        // Optional: throw the error to be handled by caller
         throw error;
     }
 };
