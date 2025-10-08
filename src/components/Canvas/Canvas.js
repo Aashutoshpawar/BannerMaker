@@ -42,13 +42,21 @@ const Canvas = () => {
   const navigation = useNavigation();
   const viewShotRef = useRef();
 
-  const { image, canvas } = route.params || {};
+  const {
+    image,
+    canvas,
+    stickers: draftStickers,
+    texts: draftTexts,
+    background: draftBackground,
+  } = route.params || {};
+
+  // const { image, canvas } = route.params || {};
   const [userId, setUserId] = useState(null);
 
   const [activeFont, setActiveFont] = useState("System");
-  const [stickers, setStickers] = useState([]);
-  const [texts, setTexts] = useState([]);
-  const [background, setBackground] = useState(image || null);
+  const [stickers, setStickers] = useState(draftStickers || []);
+  const [texts, setTexts] = useState(draftTexts || []);
+  const [background, setBackground] = useState(draftBackground || image || null);
 
   const [history, setHistory] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
@@ -65,7 +73,14 @@ const Canvas = () => {
   const bottomSheetRef = useRef(null);
   const snapPoints = useMemo(() => ["25%", "40%"], []);
 
+  // ✅ Apply draft data if exists
+  React.useEffect(() => {
+    if (draftStickers?.length) setStickers(draftStickers);
+    if (draftTexts?.length) setTexts(draftTexts);
+    if (draftBackground) setBackground(draftBackground);
+  }, [draftStickers, draftTexts, draftBackground]);
 
+  // ✅ Fetch userId
   React.useEffect(() => {
     const fetchUserId = async () => {
       const id = await AsyncStorage.getItem("userId");
@@ -73,7 +88,6 @@ const Canvas = () => {
     };
     fetchUserId();
   }, []);
-
 
 
   const getCanvasLayersData = () => {
@@ -273,18 +287,38 @@ const Canvas = () => {
     );
   }
 
-  const [canvasWidth, canvasHeight] = canvas.size
-    .split("x")
-    .map((s) => parseInt(s.trim(), 10));
+  // ---------- Canvas Size (safe + numeric support) ----------
+  let canvasWidth = 1080;
+  let canvasHeight = 1920;
 
+  // ✅ Handle both numeric and string canvas sizes
+  if (canvas) {
+    if (canvas.width && canvas.height) {
+      // Direct numeric size (from API)
+      canvasWidth = canvas.width;
+      canvasHeight = canvas.height;
+    } else if (canvas.size) {
+      // Legacy string format ("2000 x 2000")
+      const [w, h] = canvas.size.split("x").map((s) => parseInt(s.trim(), 10));
+      if (!isNaN(w) && !isNaN(h)) {
+        canvasWidth = w;
+        canvasHeight = h;
+      } else {
+        console.warn("⚠️ Invalid canvas size string, using default 1080x1920");
+      }
+    } else {
+      console.warn("⚠️ Canvas size missing, using default 1080x1920");
+    }
+  }
+
+  // ✅ Scale canvas to fit the screen
   const screenWidth = Dimensions.get("window").width - 40;
   const screenHeight = Dimensions.get("window").height - 40;
   const scale = Math.min(screenWidth / canvasWidth, screenHeight / canvasHeight);
-
   const displayWidth = Math.round(canvasWidth * scale);
   const displayHeight = Math.round(canvasHeight * scale);
-
   const canvasTopMargin = 20;
+
 
   // ---------- Position Updaters ----------
   const updateTextPosition = (index, x, y, scale, rotation) => {
@@ -378,6 +412,15 @@ const Canvas = () => {
         { rotateZ: `${rotationValue.value}rad` },
       ],
     }));
+
+    React.useEffect(() => {
+      console.log("🎨 Canvas initialized with:", {
+        background: background,
+        stickers: stickers.length,
+        texts: texts.length,
+        canvas: canvas,
+      });
+    }, []);
 
     return (
       <GestureDetector gesture={drag}>
