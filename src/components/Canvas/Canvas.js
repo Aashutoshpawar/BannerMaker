@@ -411,6 +411,8 @@ const Canvas = () => {
                   fontStyle: item.italic ? "italic" : "normal",
                   textDecorationLine: item.underline ? "underline" : "none",
                   textAlign: item.align || "left",
+                  opacity: item.opacity ?? 1,
+
                 }}
               >
                 {item.value}
@@ -421,30 +423,47 @@ const Canvas = () => {
           {selected && (
             <>
               {/* Delete */}
-
               <TouchableOpacity
+                activeOpacity={0.7}
                 onPress={() => {
-                  requestAnimationFrame(() => {
-                    setTexts((prev) => prev.filter((_, i) => i !== index));
-                  });
+                  console.log("Delete pressed for text index:", index);
+                  console.log("Current texts before delete:", texts);
+
+                  // Push to history first
+                  pushToHistory();
+                  console.log("State pushed to history");
+
+                  // Clear editing state
+                  setEditingIndex(null);
+                  console.log("Editing index cleared");
+
+                  // Remove text immediately
+                  setTexts((prev) => prev.filter((_, i) => i !== index));
+                  console.log("Text deleted");
                 }}
-                style={[styles.handle, { top: -16, left: -16 }]}
+                style={[
+                  styles.handle,
+                  {
+                    top: -16,
+                    left: -16,
+                    backgroundColor: "#000",
+                    zIndex: 9999, // Increase z-index
+                  }
+                ]}
               >
                 <AntDesign name="delete" size={16} color="white" />
               </TouchableOpacity>
 
-
-
               {/* Rotate */}
               <GestureDetector gesture={rotateGesture}>
-                <Animated.View style={[styles.handle, { bottom: -16, left: -16 }]}>
+                <Animated.View style={[styles.handle, { bottom: -16, left: -16, zIndex: 9999 }]}>
                   <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
                 </Animated.View>
               </GestureDetector>
 
               {/* Scale */}
               <GestureDetector gesture={scaleGesture}>
-                <Animated.View style={[styles.handle, { bottom: -16, right: -16 }]}>
+                <Animated.View style={[styles.handle, { bottom: -16, right: -16, zIndex: 9999 }]}>
                   <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
                 </Animated.View>
               </GestureDetector>

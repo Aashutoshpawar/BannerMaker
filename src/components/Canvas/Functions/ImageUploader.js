@@ -9,11 +9,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import axios from "axios";
 import RNFS from "react-native-fs";
-
-const API_KEY = "YwqpGJivrjsGE5MGTUzJ2fcr"; // replace with your key
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const ImageUploader = ({ pushToHistory, setStickers, displayWidth, displayHeight }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -31,92 +28,67 @@ const ImageUploader = ({ pushToHistory, setStickers, displayWidth, displayHeight
   };
 
   const openGallery = () => {
-    ImagePicker.openPicker({
-      width: 600,
-      height: 600,
-      cropping: true,
-    })
+    ImagePicker.openPicker({ width: 600, height: 600, cropping: true })
       .then(handleImagePicked)
       .catch(() => setModalVisible(false));
   };
 
   const openCamera = () => {
-    ImagePicker.openCamera({
-      width: 600,
-      height: 600,
-      cropping: true,
-    })
+    ImagePicker.openCamera({ width: 600, height: 600, cropping: true })
       .then(handleImagePicked)
       .catch(() => setModalVisible(false));
   };
 
   const saveImage = (uri) => {
     pushToHistory();
-    setStickers((prev) => [
+    setStickers(prev => [
       ...prev,
-      {
-        uri,
-        x: displayWidth / 2 - 50,
-        y: displayHeight / 2 - 50,
-        scale: 1,
-        rotation: 0,
-      },
+      { uri, x: displayWidth / 2 - 50, y: displayHeight / 2 - 50, scale: 1, rotation: 0 }
     ]);
     setPreviewVisible(false);
     setSelectedImage(null);
     setLoading(false);
   };
 
-  const continueWithBackground = () => {
-    if (selectedImage) {
-      saveImage(selectedImage);
-    }
-  };
+  // const removeBackground = async () => {
+  //   if (!selectedImage) return;
+  //   try {
+  //     setLoading(true);
 
-  const removeBackground = async () => {
-    if (!selectedImage) return;
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("image_file", {
-        uri: selectedImage,
-        type: "image/png",
-        name: "photo.png",
-      });
-      formData.append("size", "auto");
+  //     const formData = new FormData();
+  //     formData.append("image", {
+  //       uri: selectedImage,
+  //       type: "image/jpeg",
+  //       name: "photo.jpg",
+  //     });
 
-      const response = await axios({
-        method: "post",
-        url: "https://api.remove.bg/v1.0/removebg",
-        data: formData,
-        headers: {
-          "X-Api-Key": API_KEY,
-          "Content-Type": "multipart/form-data",
-        },
-        responseType: "arraybuffer",
-      });
+  //     const response = await fetch("https://api.removal.ai/1.0/remove", {
+  //       method: "POST",
+  //       headers: {
+  //         "Rm-Token": "1f3444be-011f-4377-86e4-2e82c5281126", // <-- Add your API key
+  //       },
+  //       body: formData,
+  //     });
 
-      if (response.status === 200) {
-        const filePath = `${RNFS.CachesDirectoryPath}/no-bg.png`;
-        const base64Data = Buffer.from(response.data, "binary").toString("base64");
+  //     if (!response.ok) throw new Error(`Background removal failed: ${response.status}`);
 
-        await RNFS.writeFile(filePath, base64Data, "base64");
+  //     const blob = await response.blob();
+  //     const arrayBuffer = await blob.arrayBuffer();
+  //     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-        saveImage("file://" + filePath);
-      } else {
-        alert("Background removal failed!");
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("RemoveBG Error:", error);
-      alert("Error removing background.");
-      setLoading(false);
-    }
-  };
+  //     const filePath = `${RNFS.CachesDirectoryPath}/no-bg.png`;
+  //     await RNFS.writeFile(filePath, base64, "base64");
+
+  //     saveImage("file://" + filePath);
+  //   } catch (error) {
+  //     console.error("RemovalAI Error:", error);
+  //     alert("Error removing background.");
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <>
-      {/* Upload Button */}
       <TouchableOpacity style={{ alignItems: "center" }} onPress={() => setModalVisible(true)}>
         <Ionicons name="image-outline" size={28} color="black" />
         <Text style={{ fontSize: 12, color: "#000" }}>Upload</Text>
@@ -151,27 +123,16 @@ const ImageUploader = ({ pushToHistory, setStickers, displayWidth, displayHeight
       <Modal transparent visible={previewVisible} animationType="fade" onRequestClose={() => setPreviewVisible(false)}>
         <View style={styles.previewOverlay}>
           <View style={styles.previewBox}>
-            {loading ? (
-              <ActivityIndicator size="large" color="#4B0082" />
-            ) : (
+            {loading ? <ActivityIndicator size="large" color="#4B0082" /> : (
               <>
-                {selectedImage && (
-                  <Image source={{ uri: selectedImage }} style={styles.previewImage} resizeMode="contain" />
-                )}
+                {selectedImage && <Image source={{ uri: selectedImage }} style={styles.previewImage} resizeMode="contain" />}
                 <View style={styles.actionRow}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: "#4B0082" }]}
-                    onPress={continueWithBackground}
-                  >
+                  <TouchableOpacity style={[styles.actionButton, { backgroundColor: "#4B0082" }]} onPress={() => saveImage(selectedImage)}>
                     <Text style={styles.actionText}>Continue with Background</Text>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: "#FF1493" }]}
-                    onPress={removeBackground}
-                  >
+                  {/* <TouchableOpacity style={[styles.actionButton, { backgroundColor: "#FF1493" }]} onPress={removeBackground}>
                     <Text style={styles.actionText}>Remove Background</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
                 <TouchableOpacity onPress={() => setPreviewVisible(false)} style={{ marginTop: 10 }}>
                   <Text style={{ color: "red" }}>Cancel</Text>
@@ -186,78 +147,18 @@ const ImageUploader = ({ pushToHistory, setStickers, displayWidth, displayHeight
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "flex-end",
-  },
-  bottomSheet: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    alignItems: "center",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#4B0082",
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 8,
-    width: "100%",
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  previewOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  previewBox: {
-    width: "100%",
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  previewImage: {
-    width: "100%",
-    height: 300,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  actionRow: {
-    flexDirection: "column",
-    width: "100%",
-  },
-  actionButton: {
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 6,
-    alignItems: "center",
-  },
-  actionText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end" },
+  bottomSheet: { backgroundColor: "#fff", padding: 20, borderTopLeftRadius: 16, borderTopRightRadius: 16, alignItems: "center" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: "bold" },
+  button: { flexDirection: "row", alignItems: "center", backgroundColor: "#4B0082", padding: 12, borderRadius: 8, marginVertical: 8, width: "100%", justifyContent: "center" },
+  buttonText: { color: "#fff", fontSize: 16, marginLeft: 8 },
+  previewOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "center", alignItems: "center", padding: 20 },
+  previewBox: { width: "100%", backgroundColor: "#fff", padding: 20, borderRadius: 12, alignItems: "center" },
+  previewImage: { width: "100%", height: 300, borderRadius: 8, marginBottom: 20 },
+  actionRow: { flexDirection: "column", width: "100%" },
+  actionButton: { padding: 12, borderRadius: 8, marginVertical: 6, alignItems: "center" },
+  actionText: { color: "#fff", fontWeight: "bold" },
 });
 
 export default ImageUploader;
