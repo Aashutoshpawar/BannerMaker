@@ -35,12 +35,13 @@ import ImageUploader from "./Functions/ImageUploader";
 import BackgroundSelector from "./Functions/BackgroundSelector";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "react-native/types_generated/Libraries/ReactNative/ReactFabricPublicInstance/ReactNativeAttributePayload";
-import { createProject } from "../../store/services/creationServices/CreationServices";
+import { createProject, updateProject } from "../../store/services/creationServices/CreationServices";
 
 const Canvas = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const viewShotRef = useRef();
+
 
   const {
     image,
@@ -49,6 +50,21 @@ const Canvas = () => {
     texts: draftTexts,
     background: draftBackground,
   } = route.params || {};
+
+  // ✅ If a full draft object is passed (with stickers & texts), apply it
+  React.useEffect(() => {
+    if (route.params?.draft) {
+      const { stickers = [], texts = [], background = null, canvas: draftCanvas, _id } = route.params.draft;
+      setStickers(stickers);
+      setTexts(texts);
+      setBackground(background);
+      if (draftCanvas) route.params.canvas = draftCanvas;
+      if (_id) setProjectId(_id); // <-- track the project ID
+      setIsDraft(true); // mark as draft
+    }
+  }, [route.params?.draft]);
+
+
 
   // const { image, canvas } = route.params || {};
   const [userId, setUserId] = useState(null);
@@ -68,6 +84,10 @@ const Canvas = () => {
   const [textEditorVisible, setTextEditorVisible] = useState(false);
 
   const [selectedStickerIndex, setSelectedStickerIndex] = useState(null);
+
+  const [isDraft, setIsDraft] = useState(false);
+  const [projectId, setProjectId] = useState(null);
+
 
 
   const bottomSheetRef = useRef(null);
@@ -101,7 +121,7 @@ const Canvas = () => {
       texts: texts.map((t, idx) => ({
         id: t.id || `text${idx + 1}`,
         value: t.value,
-        font: t.fontFamily || "System",
+        fontFamily: t.fontFamily || "System",
         size: t.fontSize || 24,
         color: t.color || "#000000",
         opacity: t.opacity ?? 1,
@@ -212,38 +232,39 @@ const Canvas = () => {
         return;
       }
 
-      // Capture the canvas as PNG for transparency
-      const uri = await viewShotRef.current.capture({
-        format: "png",
-        quality: 1,
-        result: "tmpfile", // temporary file path
-      });
-
-      console.log("Captured image path:", uri);
-
+      const uri = await viewShotRef.current.capture({ format: "png", quality: 1, result: "tmpfile" });
       await CameraRoll.save(uri, { type: "photo" });
-      // Alert.alert("Saved", "Canvas saved to gallery!");
+
+      const payload = getCanvasLayersData();
+      console.log("Payload to send:", payload);
+
       Alert.alert(
         "Confirmation",
-        "Are you sure you want save the Template?",
+        "Are you sure you want to save the Template?",
         [
           { text: "No", style: "cancel" },
           {
             text: "Yes",
             onPress: async () => {
-              setLoading(true); // ⬅️ Show loader
+              setLoading(true);
               try {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Home' }],
-                });
+                if (isDraft && projectId) {
+                  await updateProject(projectId, payload);
+                  console.log("Project updated successfully");
+                } else {
+                  const data = await createProject(payload);
+                  console.log("Project created successfully:", data);
+                  // Store projectId if needed for future drafts
+                  if (data?._id) setProjectId(data._id);
+                }
+                navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
               } catch (e) {
-                console.log("error:", e);
+                console.error("Error saving project:", e);
               } finally {
-                setLoading(false); // ⬅️ Hide loader
+                setLoading(false);
               }
-            }
-          }
+            },
+          },
         ],
         { cancelable: true }
       );
@@ -251,18 +272,8 @@ const Canvas = () => {
       console.error("Error saving canvas:", error);
       Alert.alert("Error", "Failed to save canvas.");
     }
-    const payload = getCanvasLayersData();
-    console.log("Payload to send:", payload);
-
-    createProject(payload)
-      .then((data) => {
-        console.log("Project created successfully:", data);
-      })
-      .catch((error) => {
-        console.error("Error creating project:", error);
-        console.log("Payload was:", payload);
-      });
   };
+
 
 
 
@@ -465,37 +476,6 @@ const Canvas = () => {
 
           {selected && (
             <>
-              {/* Delete */}
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  console.log("Delete pressed for text index:", index);
-                  console.log("Current texts before delete:", texts);
-
-                  // Push to history first
-                  pushToHistory();
-                  console.log("State pushed to history");
-
-                  // Clear editing state
-                  setEditingIndex(null);
-                  console.log("Editing index cleared");
-
-                  // Remove text immediately
-                  setTexts((prev) => prev.filter((_, i) => i !== index));
-                  console.log("Text deleted");
-                }}
-                style={[
-                  styles.handle,
-                  {
-                    top: -16,
-                    left: -16,
-                    backgroundColor: "#000",
-                    zIndex: 9999, // Increase z-index
-                  }
-                ]}
-              >
-                <AntDesign name="delete" size={16} color="white" />
-              </TouchableOpacity>
 
               {/* Rotate */}
               <GestureDetector gesture={rotateGesture}>

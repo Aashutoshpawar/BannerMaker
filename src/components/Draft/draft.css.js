@@ -2,11 +2,9 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const tileMargin = 10;
-const tileWidth = (width - 3 * tileMargin) / 2; 
-// (2 tiles per row) → left + right padding + spacing between
+const tileWidth = (width - 3 * tileMargin) / 2;
 
 export default StyleSheet.create({
-  // 🧱 Main Screen
   container: {
     flex: 1,
     padding: tileMargin,
@@ -17,8 +15,6 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
-
-  // 🟦 Draft Grid Tile
   draftTile: {
     width: tileWidth,
     height: 210,
@@ -26,26 +22,15 @@ export default StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
   },
-  draftImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  emptyTile: {
+  draftPreview: {
     flex: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#fafafa',
+    position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#eee',
   },
-  draftTitle: {
-    marginTop: 8,
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    paddingHorizontal: 5,
-  },
-
-  // 📭 No Drafts State
   noDraftsContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -55,8 +40,6 @@ export default StyleSheet.create({
     fontSize: 18,
     color: '#999',
   },
-
-  // 📝 Bottom Sheet Styles
   bottomSheetModal: {
     justifyContent: 'flex-end',
     margin: 0,
@@ -68,16 +51,9 @@ export default StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  previewImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 20,
-    resizeMode: 'cover',
-  },
   noPreview: {
     width: '100%',
-    height: 200,
+    height: 250,
     backgroundColor: '#eee',
     borderRadius: 10,
     marginBottom: 20,
