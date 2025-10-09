@@ -13,8 +13,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet as RNStyleSheet,
+  Alert, // 👈 ADD Alert for confirmation
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import FontAwesome5 from "react-native-vector-icons/FontAwesome5"; // 👈 ADD for trash icon
 import ColorPicker from "react-native-wheel-color-picker";
 import GradientButton from "../../../constants/GradientButton";
 import Slider from "@react-native-community/slider";
@@ -53,9 +55,8 @@ const TextEditor = ({
   const [colorSheetVisible, setColorSheetVisible] = useState(false);
   const [textColor, setTextColor] = useState("#000");
   const [isEdit, setIsEdit] = useState(false);
-  const [opacitySheetVisible, setOpacitySheetVisible] = useState(false); // 👈 NEW
-  const [textOpacity, setTextOpacity] = useState(1); // 👈 NEW
-
+  const [opacitySheetVisible, setOpacitySheetVisible] = useState(false);
+  const [textOpacity, setTextOpacity] = useState(1);
 
   const panY = useState(new Animated.Value(0))[0];
 
@@ -80,6 +81,33 @@ const TextEditor = ({
       }
     },
   });
+
+  // ========= DELETE TEXT FUNCTION =========
+  const deleteText = () => {
+    if (editingIndex === null) return;
+    
+    Alert.alert(
+      "Delete Text",
+      "Are you sure you want to delete this text?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            pushToHistory?.(); // Save to history before deletion
+            setTexts((prev) => prev.filter((_, idx) => idx !== editingIndex));
+            setTextInputValue("");
+            setEditingIndex(null);
+            setModalVisible(false);
+          }
+        }
+      ]
+    );
+  };
 
   // ========= Opacity Sheet Pan =========
   const opacitySheetY = useState(new Animated.Value(400))[0];
@@ -120,14 +148,14 @@ const TextEditor = ({
       setIsUnderline(textObj.underline || false);
       setActiveFont(textObj.fontLabel || "serif");
       setTextColor(textObj.color || "#000");
-      setTextOpacity(textObj.opacity ?? 1); // 👈 NEW
+      setTextOpacity(textObj.opacity ?? 1);
       setIsEdit(true);
     } else {
       setIsBold(false);
       setIsItalic(false);
       setIsUnderline(false);
       setTextColor("#000");
-      setTextOpacity(1); // 👈 RESET
+      setTextOpacity(1);
       setIsEdit(false);
     }
   }, [editingIndex, texts]);
@@ -144,8 +172,7 @@ const TextEditor = ({
     textDecorationLine: isUnderline ? "underline" : "none",
     color: textColor,
     fontWeight: isBold ? "bold" : "normal",
-    opacity: textOpacity, // 👈 APPLY opacity
-
+    opacity: textOpacity,
   });
 
   const applyFontStyle = (fontLabel) => {
@@ -201,10 +228,9 @@ const TextEditor = ({
         return t;
       });
       setTexts(updated);
-      setTextInputValue(updated[editingIndex].value); // Update input value too
+      setTextInputValue(updated[editingIndex].value);
     }
   };
-
 
   const applyColor = (color) => {
     setTextColor(color);
@@ -228,7 +254,7 @@ const TextEditor = ({
         bold: isBold,
         italic: isItalic,
         underline: isUnderline,
-        opacity: textOpacity, // 👈 Include opacity
+        opacity: textOpacity,
       };
       setTexts(updated);
     } else {
@@ -248,8 +274,7 @@ const TextEditor = ({
           underline: isUnderline,
           fontSize: 26,
           textAlign: "left",
-          opacity: textOpacity, // 👈 Default 1
-
+          opacity: textOpacity,
         },
       ]);
     }
@@ -348,10 +373,21 @@ const TextEditor = ({
                       {isEdit ? "Edit Text" : "Add Text"}
                     </Text>
                   </TouchableOpacity>
+                  
+                  {/* 👈 DELETE BUTTON - Only show when editing existing text */}
+                  {isEdit && (
+                    <TouchableOpacity 
+                      onPress={deleteText}
+                      style={styles.deleteButton}
+                    >
+                      <FontAwesome5 name="trash-alt" size={20} color="#FF3B30" />
+                    </TouchableOpacity>
+                  )}
                 </View>
+
                 {/* Formatting Buttons */}
                 {isEdit ?
-                  < View style={styles.optionRow}>
+                  <View style={styles.optionRow}>
                     <TouchableOpacity onPress={() => applyTextFormatting({ bold: !isBold })} style={[styles.formatButton, isBold && styles.formatActive]}>
                       <Text style={{ fontWeight: "bold", color: isBold ? "#fff" : "#333" }}>B</Text>
                     </TouchableOpacity>
@@ -369,7 +405,7 @@ const TextEditor = ({
                       <Text style={{ color: textColor }}>Color</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => setOpacitySheetVisible(true)} // 👈 NEW BUTTON
+                      onPress={() => setOpacitySheetVisible(true)}
                       style={styles.formatButton}
                     >
                       <Text>Opacity</Text>
@@ -377,6 +413,7 @@ const TextEditor = ({
                   </View>
                   : null
                 }
+
                 {/* Input */}
                 <TextInput
                   value={textInputValue}
@@ -397,9 +434,10 @@ const TextEditor = ({
               </Animated.View>
             </KeyboardAvoidingView>
           </View>
-        </TouchableWithoutFeedback >
+        </TouchableWithoutFeedback>
       )}
 
+      {/* 👈 REST OF YOUR MODALS (Opacity, Font, Color) remain the same */}
       {opacitySheetVisible && (
         <View style={styles.overlay}>
           <TouchableWithoutFeedback
@@ -487,12 +525,11 @@ const TextEditor = ({
           <View style={styles.overlay}>
             <TouchableWithoutFeedback
               onPress={() => {
-                // Animate close before actually hiding the sheet
                 Animated.timing(colorSheetY, {
-                  toValue: 300, // slide down distance
+                  toValue: 300,
                   duration: 250,
                   useNativeDriver: true,
-                }).start(() => setColorSheetVisible(false)); // hide after animation
+                }).start(() => setColorSheetVisible(false));
               }}
             >
               <View style={RNStyleSheet.absoluteFill} />
@@ -551,7 +588,18 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  headerContainer: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  headerContainer: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between", // 👈 ADD this to space between back and delete
+    marginBottom: 10 
+  },
+  // 👈 ADD deleteButton styles
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#FFE6E6", // Light red background
+  },
   fontHeaderContainer: { flexDirection: "row", alignItems: "center" },
   backText: { fontSize: 18, fontWeight: "bold", marginLeft: 10 },
   optionRow: { flexDirection: "row", flexWrap: "wrap", marginBottom: 10 },
