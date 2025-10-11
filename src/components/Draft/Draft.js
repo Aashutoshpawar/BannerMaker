@@ -14,7 +14,7 @@ import Modal from 'react-native-modal';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import styles from './draft.css';
-import { getProjectByUserID } from '../../store/services/creationServices/CreationServices';
+import { deleteProject, getProjectByUserID } from '../../store/services/creationServices/CreationServices';
 
 const { width } = Dimensions.get('window');
 const tileMargin = 10;
@@ -132,11 +132,29 @@ const Draft = () => {
     });
   };
 
-  const handleDeleteDraft = () => {
-    console.log('🗑️ Deleting draft:', selectedDraft?._id);
-    handleCloseModal();
-    if (userId) handleDraftsFetch(userId);
+  const handleDeleteDraft = async () => {
+    if (!selectedDraft?._id) return;
+
+    const deletePayload = selectedDraft._id;
+    console.log('🗑️ Deleting draft:', deletePayload);
+
+    try {
+      // Wait for the delete API to complete
+      await deleteProject(deletePayload);
+      console.log('✅ Draft deleted successfully');
+
+      // Close the modal after successful deletion
+      handleCloseModal();
+
+      // Refresh drafts
+      if (userId) {
+        await handleDraftsFetch(userId);
+      }
+    } catch (err) {
+      console.error('❌ Error deleting draft:', err);
+    }
   };
+
 
   // ✅ Scaled draft preview for grid
   const renderDraft = ({ item }) => {
