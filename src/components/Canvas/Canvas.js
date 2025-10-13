@@ -18,7 +18,6 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import LinearGradient from "react-native-linear-gradient";
-
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
 import EvilIcons from "react-native-vector-icons/EvilIcons";
 import AntDesign from "react-native-vector-icons/AntDesign";
@@ -26,16 +25,13 @@ import MaterialDesignIcons from "react-native-vector-icons/MaterialCommunityIcon
 import ViewShot from "react-native-view-shot";
 import { CameraRoll } from "@react-native-camera-roll/camera-roll";
 import { PermissionsAndroid, Platform } from "react-native";
-
-
-
 import TextEditor from "./Functions/TextEditor";
 import StickerManager from "./Functions/StickerManager";
 import ImageUploader from "./Functions/ImageUploader";
 import BackgroundSelector from "./Functions/BackgroundSelector";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { create } from "react-native/types_generated/Libraries/ReactNative/ReactFabricPublicInstance/ReactNativeAttributePayload";
 import { createProject, updateProject } from "../../store/services/creationServices/CreationServices";
+import LayerManager from "./Functions/LayerManager";
 
 const Canvas = () => {
   const route = useRoute();
@@ -88,7 +84,8 @@ const Canvas = () => {
   const [isDraft, setIsDraft] = useState(false);
   const [projectId, setProjectId] = useState(null);
 
-
+  const [loading, setLoading] = useState(false);
+  const [layerVisible, setLayerVisible] = useState(false);
 
   const bottomSheetRef = useRef(null);
   const snapPoints = useMemo(() => ["25%", "40%"], []);
@@ -108,6 +105,46 @@ const Canvas = () => {
     };
     fetchUserId();
   }, []);
+
+
+  // Move layer up (forward)
+  const moveLayerUp = (type, index) => {
+    if (type === "sticker") {
+      setStickers((prev) => {
+        if (index >= prev.length - 1) return prev; // already top
+        const newStickers = [...prev];
+        [newStickers[index], newStickers[index + 1]] = [newStickers[index + 1], newStickers[index]];
+        return newStickers;
+      });
+    } else if (type === "text") {
+      setTexts((prev) => {
+        if (index >= prev.length - 1) return prev;
+        const newTexts = [...prev];
+        [newTexts[index], newTexts[index + 1]] = [newTexts[index + 1], newTexts[index]];
+        return newTexts;
+      });
+    }
+  };
+
+  // Move layer down (backward)
+  const moveLayerDown = (type, index) => {
+    if (type === "sticker") {
+      setStickers((prev) => {
+        if (index <= 0) return prev; // already bottom
+        const newStickers = [...prev];
+        [newStickers[index], newStickers[index - 1]] = [newStickers[index - 1], newStickers[index]];
+        return newStickers;
+      });
+    } else if (type === "text") {
+      setTexts((prev) => {
+        if (index <= 0) return prev;
+        const newTexts = [...prev];
+        [newTexts[index], newTexts[index - 1]] = [newTexts[index - 1], newTexts[index]];
+        return newTexts;
+      });
+    }
+  };
+
 
 
   const getCanvasLayersData = () => {
@@ -232,12 +269,18 @@ const Canvas = () => {
         return;
       }
 
-      const uri = await viewShotRef.current.capture({ format: "png", quality: 1, result: "tmpfile" });
+      const uri = await viewShotRef.current.capture({
+        format: "png",
+        quality: 1,
+        result: "tmpfile",
+      });
+
       await CameraRoll.save(uri, { type: "photo" });
 
       const payload = getCanvasLayersData();
       console.log("Payload to send:", payload);
 
+      // Ask for confirmation — simple callback, no async here
       Alert.alert(
         "Confirmation",
         "Are you sure you want to save the Template?",
@@ -245,25 +288,7 @@ const Canvas = () => {
           { text: "No", style: "cancel" },
           {
             text: "Yes",
-            onPress: async () => {
-              setLoading(true);
-              try {
-                if (isDraft && projectId) {
-                  await updateProject(projectId, payload);
-                  console.log("Project updated successfully");
-                } else {
-                  const data = await createProject(payload);
-                  console.log("Project created successfully:", data);
-                  // Store projectId if needed for future drafts
-                  if (data?._id) setProjectId(data._id);
-                }
-                navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-              } catch (e) {
-                console.error("Error saving project:", e);
-              } finally {
-                setLoading(false);
-              }
-            },
+            onPress: () => handleSaveProject(payload), // move async logic outside
           },
         ],
         { cancelable: true }
@@ -273,6 +298,32 @@ const Canvas = () => {
       Alert.alert("Error", "Failed to save canvas.");
     }
   };
+
+  // Separate function to handle async work safely
+  const handleSaveProject = async (payload) => {
+    try {
+      setLoading(true);
+
+      if (isDraft && projectId) {
+        console.log("Updating project:", projectId);
+        await updateProject(projectId, payload);
+        console.log("Project updated successfully");
+      } else {
+        console.log("Creating new project with payload:", payload);
+        const data = await createProject(payload);
+        console.log("Project created successfully:", data);
+        if (data?._id) setProjectId(data._id);
+      }
+
+      navigation.navigate("MainPage");
+    } catch (error) {
+      console.error("Error saving project:", error);
+      Alert.alert("Error", "Failed to save project.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
 
 
@@ -354,17 +405,26 @@ const Canvas = () => {
   const DraggableText = ({ item, index }) => {
     const [selected, setSelected] = useState(false);
 
-    // Auto-select if being edited
-    React.useEffect(() => {
-      if (editingIndex === index) setSelected(true);
-    }, [editingIndex]);
-
+    // Shared values must be declared first
     const translateX = useSharedValue(item.x ?? 50);
     const translateY = useSharedValue(item.y ?? 50);
     const scaleValue = useSharedValue(item.scale ?? 1);
     const rotationValue = useSharedValue(item.rotation ?? 0);
 
-    // Main drag gesture
+    // Sync shared values whenever item changes (important for layer reorder)
+    React.useEffect(() => {
+      translateX.value = item.x ?? 50;
+      translateY.value = item.y ?? 50;
+      scaleValue.value = item.scale ?? 1;
+      rotationValue.value = item.rotation ?? 0;
+    }, [item]);
+
+    // Auto-select if being edited
+    React.useEffect(() => {
+      if (editingIndex === index) setSelected(true);
+    }, [editingIndex]);
+
+    // Drag gesture
     const drag = Gesture.Pan()
       .onChange((e) => {
         translateX.value += e.changeX;
@@ -380,7 +440,7 @@ const Canvas = () => {
         );
       });
 
-    // Rotate handle gesture
+    // Rotate gesture
     const rotateGesture = Gesture.Pan()
       .onChange((e) => {
         rotationValue.value += e.changeX * 0.01;
@@ -395,7 +455,7 @@ const Canvas = () => {
         );
       });
 
-    // Scale handle gesture
+    // Scale gesture
     const scaleGesture = Gesture.Pan()
       .onChange((e) => {
         scaleValue.value += e.changeX * 0.005;
@@ -411,11 +471,9 @@ const Canvas = () => {
         );
       });
 
-    // Function to get full canvas layers data
-
-
     const animatedStyle = useAnimatedStyle(() => ({
       position: "absolute",
+      zIndex: selected ? 999 : index,
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
@@ -424,38 +482,19 @@ const Canvas = () => {
       ],
     }));
 
-    React.useEffect(() => {
-      console.log("🎨 Canvas initialized with:", {
-        background: background,
-        stickers: stickers.length,
-        texts: texts.length,
-        canvas: canvas,
-      });
-    }, []);
-
     return (
       <GestureDetector gesture={drag}>
         <Animated.View style={[animatedStyle]}>
           <TouchableOpacity
             activeOpacity={1}
-
             onPress={() => {
-              setSelected(true)
+              setSelected(true);
               setEditingIndex(index);
               setTextInputValue(item.value);
               setTextEditorVisible(true);
             }}
           >
-            <View
-              style={[
-                selected && {
-                  borderWidth: 1,
-                  borderStyle: "dashed",
-                  borderColor: "black",
-                  padding: 8,
-                },
-              ]}
-            >
+            <View style={selected && { borderWidth: 1, borderStyle: "dashed", borderColor: "black", padding: 8 }}>
               <Text
                 style={{
                   fontSize: item.fontSize || 26,
@@ -466,7 +505,6 @@ const Canvas = () => {
                   textDecorationLine: item.underline ? "underline" : "none",
                   textAlign: item.align || "left",
                   opacity: item.opacity ?? 1,
-
                 }}
               >
                 {item.value}
@@ -476,15 +514,11 @@ const Canvas = () => {
 
           {selected && (
             <>
-
-              {/* Rotate */}
               <GestureDetector gesture={rotateGesture}>
                 <Animated.View style={[styles.handle, { bottom: -16, left: -16, zIndex: 9999 }]}>
                   <MaterialDesignIcons name="rotate-3d" size={16} color="white" />
                 </Animated.View>
               </GestureDetector>
-
-              {/* Scale */}
               <GestureDetector gesture={scaleGesture}>
                 <Animated.View style={[styles.handle, { bottom: -16, right: -16, zIndex: 9999 }]}>
                   <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
@@ -497,18 +531,27 @@ const Canvas = () => {
     );
   };
 
+
   // ---------- Draggable Sticker ----------
   // Update the DraggableSticker component in Canvas.js with this enhanced version
 
   const DraggableSticker = ({ item, index }) => {
     const [selected, setSelected] = useState(false);
 
+    // Shared values
     const translateX = useSharedValue(item.x ?? 50);
     const translateY = useSharedValue(item.y ?? 50);
     const scaleValue = useSharedValue(item.scale ?? 1);
     const rotationValue = useSharedValue(item.rotation ?? 0);
 
-    // Main drag
+    // Sync shared values with state
+    React.useEffect(() => {
+      translateX.value = item.x ?? 50;
+      translateY.value = item.y ?? 50;
+      scaleValue.value = item.scale ?? 1;
+      rotationValue.value = item.rotation ?? 0;
+    }, [item]);
+
     const drag = Gesture.Pan()
       .onChange((e) => {
         translateX.value += e.changeX;
@@ -524,7 +567,6 @@ const Canvas = () => {
         );
       });
 
-    // Rotate handle
     const rotateGesture = Gesture.Pan()
       .onChange((e) => {
         rotationValue.value += e.changeX * 0.01;
@@ -539,7 +581,6 @@ const Canvas = () => {
         );
       });
 
-    // Scale handle
     const scaleGesture = Gesture.Pan()
       .onChange((e) => {
         scaleValue.value += e.changeX * 0.005;
@@ -557,6 +598,7 @@ const Canvas = () => {
 
     const animatedStyle = useAnimatedStyle(() => ({
       position: "absolute",
+      zIndex: selected ? 999 : index,
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
@@ -565,7 +607,6 @@ const Canvas = () => {
       ],
     }));
 
-    // Get opacity and hue from item
     const opacity = item.opacity ?? 1;
     const hue = item.hue ?? 0;
 
@@ -579,26 +620,15 @@ const Canvas = () => {
               runOnJS(setSelectedStickerIndex)(index);
             }}
           >
-            <View
-              style={[
-                selected && {
-                  borderWidth: 1,
-                  borderStyle: "dashed",
-                  borderColor: "#000",
-                  padding: 4,
-                },
-              ]}
-            >
+            <View style={selected && { borderWidth: 1, borderStyle: "dashed", borderColor: "#000", padding: 4 }}>
               <Image
                 source={{ uri: item.uri }}
-                style={[
-                  { width: 80, height: 80 },
-                  {
-                    opacity: opacity,
-                    // CSS filter alternative for React Native
-                    tintColor: hue !== 0 ? `hsl(${hue}, 100%, 50%)` : undefined,
-                  },
-                ]}
+                style={{
+                  width: 80,
+                  height: 80,
+                  opacity: opacity,
+                  tintColor: hue !== 0 ? `hsl(${hue}, 100%, 50%)` : undefined,
+                }}
                 resizeMode="contain"
               />
             </View>
@@ -606,7 +636,6 @@ const Canvas = () => {
 
           {selected && (
             <>
-              {/* Delete */}
               <TouchableOpacity
                 onPress={() => {
                   runOnJS(setSelectedStickerIndex)(null);
@@ -617,24 +646,12 @@ const Canvas = () => {
                 <AntDesign name="delete" size={16} color="white" />
               </TouchableOpacity>
 
-              {/* Edit */}
-              {/* <TouchableOpacity
-                onPress={() => {
-                  runOnJS(setSelectedStickerIndex)(index);
-                }}
-                style={[styles.handle, { top: -16, right: -16, backgroundColor: "#000" }]}
-              >
-                <MaterialDesignIcons name="palette" size={16} color="white" />
-              </TouchableOpacity> */}
-
-              {/* Rotate */}
               <GestureDetector gesture={rotateGesture}>
                 <Animated.View style={[styles.handle, { bottom: -16, left: -16, backgroundColor: "#000" }]}>
                   <MaterialDesignIcons name="rotate-3d-variant" size={16} color="white" />
                 </Animated.View>
               </GestureDetector>
 
-              {/* Scale */}
               <GestureDetector gesture={scaleGesture}>
                 <Animated.View style={[styles.handle, { bottom: -16, right: -16, backgroundColor: "#000" }]}>
                   <MaterialDesignIcons name="arrow-expand" size={16} color="white" />
@@ -646,6 +663,7 @@ const Canvas = () => {
       </GestureDetector>
     );
   };
+
 
   const DraggableTextMemo = React.memo(DraggableText);
   const DraggableStickerMemo = React.memo(DraggableSticker);
@@ -659,6 +677,14 @@ const Canvas = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}></Text>
         <View style={styles.topcontrols}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => setLayerVisible(true)}
+          >
+            <MaterialDesignIcons name="layers-outline" size={28} color="black" />
+            {/* <Text style={styles.buttonText}>Layers</Text> */}
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.button} onPress={undo}>
             <EvilIcons name="undo" size={30} color="black" />
           </TouchableOpacity>
@@ -769,7 +795,19 @@ const Canvas = () => {
         setActiveFont={setActiveFont}
         pointerEvents="box-none"
       />
+      <LayerManager
+        visible={layerVisible}
+        setVisible={setLayerVisible}
+        stickers={stickers}
+        texts={texts}
+        setStickers={setStickers}
+        setTexts={setTexts}
+        moveLayerUp={moveLayerUp}      // new
+        moveLayerDown={moveLayerDown}  // new
+      />
     </View>
+
+
   );
 };
 
