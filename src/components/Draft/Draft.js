@@ -12,10 +12,13 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Modal from 'react-native-modal';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
 import styles from './draft.css';
-import { getProjectByUserID } from '../../store/services/creationServices/CreationServices';
+import { deleteProject, getProjectByUserID } from '../../store/services/creationServices/CreationServices';
 
 const { width } = Dimensions.get('window');
+const tileMargin = 10;
+const tileWidth = (width - 3 * tileMargin) / 2;
 
 const Draft = () => {
   const navigation = useNavigation();
@@ -23,7 +26,6 @@ const Draft = () => {
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Bottom sheet states
   const [selectedDraft, setSelectedDraft] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
 
@@ -72,7 +74,6 @@ const Draft = () => {
         }));
       }
 
-      // ✅ Reverse order (latest first)
       setDrafts(fetchedDrafts.reverse());
     } catch (error) {
       console.error('❌ Error fetching drafts:', error);
@@ -92,75 +93,238 @@ const Draft = () => {
     setModalVisible(false);
   };
 
-  // ✅ Open Draft with Canvas Size Support
-  // Replace the handleNavigateToCanvas function in Draft.js with this fixed version:
-
   const handleNavigateToCanvas = () => {
     if (!selectedDraft) return;
-
     handleCloseModal();
 
-    // ✅ Extract size from API response (numerical width/height)
-    const width = selectedDraft?.canvas?.width || 1080;
-    const height = selectedDraft?.canvas?.height || 1920;
+    const canvasWidth = selectedDraft?.canvas?.width || 1080;
+    const canvasHeight = selectedDraft?.canvas?.height || 1920;
 
-    // ✅ Prepare background data
     let backgroundData = null;
 
     if (selectedDraft?.background?.image) {
-      // Image background
       backgroundData = selectedDraft.background.image;
     } else if (selectedDraft?.background?.isGradient) {
-      // Gradient background
       backgroundData = {
-        type: "gradient",
-        colors: selectedDraft.background.gradientColors || ["#fff", "#000"],
+        type: 'gradient',
+        colors: selectedDraft.background.gradientColors || ['#fff', '#000'],
       };
     }
 
-    console.log("📤 Navigating to Canvas with:", {
+    console.log('📤 Navigating to Canvas with:', {
       background: backgroundData,
-      canvas: { width, height },
+      canvas: { width: canvasWidth, height: canvasHeight },
       stickers: selectedDraft?.stickers?.length || 0,
       texts: selectedDraft?.texts?.length || 0,
     });
 
-    // ✅ Navigate with structured data
-    navigation.navigate("Canvas", {
-      canvas: {
-        width,
-        height,
-        size: `${width} x ${height}`, // for compatibility
+    navigation.navigate('Canvas', {
+      draft: {
+        canvas: {
+          width: canvasWidth,
+          height: canvasHeight,
+          size: `${canvasWidth} x ${canvasHeight}`,
+        },
+        stickers: selectedDraft?.stickers || [],
+        texts: selectedDraft?.texts || [],
+        background: backgroundData,
       },
-      stickers: selectedDraft?.stickers || [],
-      texts: selectedDraft?.texts || [],
-      background: backgroundData, // Pass the actual background data
     });
   };
 
+  const handleDeleteDraft = async () => {
+    if (!selectedDraft?._id) return;
 
-  const handleDeleteDraft = () => {
-    console.log('🗑️ Deleting draft:', selectedDraft?._id);
-    handleCloseModal();
-    // Optional refresh after deletion
-    if (userId) handleDraftsFetch(userId);
+    const deletePayload = selectedDraft._id;
+    console.log('🗑️ Deleting draft:', deletePayload);
+
+    try {
+      // Wait for the delete API to complete
+      await deleteProject(deletePayload);
+      console.log('✅ Draft deleted successfully');
+
+      // Close the modal after successful deletion
+      handleCloseModal();
+
+      // Refresh drafts
+      if (userId) {
+        await handleDraftsFetch(userId);
+      }
+    } catch (err) {
+      console.error('❌ Error deleting draft:', err);
+    }
   };
 
+
+  // ✅ Scaled draft preview for grid
   const renderDraft = ({ item }) => {
-    const bg = item?.preview;
+    const bg = item?.background;
+    const stickers = item?.stickers || [];
+    const texts = item?.texts || [];
+    const canvasWidth = item?.canvas?.width || 1080;
+    const canvasHeight = item?.canvas?.height || 1920;
+
+    const previewWidth = tileWidth;
+    const previewHeight = 210;
+    const scaleX = previewWidth / canvasWidth;
+    const scaleY = previewHeight / canvasHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    const renderBackground = () => {
+      if (bg?.image) {
+        return (
+          <Image
+            source={{ uri: bg.image }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+        );
+      } else if (bg?.isGradient && bg?.gradientColors?.length >= 2) {
+        return (
+          <LinearGradient
+            colors={bg.gradientColors}
+            style={StyleSheet.absoluteFillObject}
+          />
+        );
+      } else {
+        return (
+          <View
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: '#eee' }]}
+          />
+        );
+      }
+    };
+
     return (
       <TouchableOpacity
         style={styles.draftTile}
         onPress={() => handleOpenDraft(item)}
       >
-        {bg ? (
-          <Image source={{ uri: bg }} style={styles.draftImage} />
-        ) : (
-          <View style={styles.emptyTile}>
-            <Text style={{ fontSize: 12, color: '#555' }}>No Image</Text>
-          </View>
-        )}
+        <View style={styles.draftPreview}>
+          {renderBackground()}
+
+          {stickers.map((sticker, i) => (
+            <Image
+              key={`sticker-${i}`}
+              source={{ uri: sticker.image }}
+              style={{
+                position: 'absolute',
+                left: (sticker.x || 0) * scale,
+                top: (sticker.y || 0) * scale,
+                width: (sticker.width || 60) * scale,
+                height: (sticker.height || 60) * scale,
+                transform: [{ rotate: `${sticker.rotation || 0}deg` }],
+              }}
+              resizeMode="contain"
+            />
+          ))}
+
+          {texts.map((txt, i) => (
+            <Text
+              key={`text-${i}`}
+              style={{
+                position: 'absolute',
+                left: (txt.x || 0) * scale,
+                top: (txt.y || 0) * scale,
+                color: txt.color || '#000',
+                fontSize: (txt.fontSize || 14) * scale,
+                fontWeight: txt.fontWeight || 'normal',
+                transform: [{ rotate: `${txt.rotation || 0}deg` }],
+              }}
+            >
+              {txt.value}
+            </Text>
+          ))}
+        </View>
       </TouchableOpacity>
+    );
+  };
+
+  // ✅ Mini preview inside modal
+  const renderMiniPreview = (draft) => {
+    const bg = draft?.background;
+    const stickers = draft?.stickers || [];
+    const texts = draft?.texts || [];
+    const canvasWidth = draft?.canvas?.width || 1080;
+    const canvasHeight = draft?.canvas?.height || 1920;
+
+    const previewWidth = width * 0.7;
+    const previewHeight = width * 1.2;
+    const scaleX = previewWidth / canvasWidth;
+    const scaleY = previewHeight / canvasHeight;
+    const scale = Math.min(scaleX, scaleY);
+
+    const renderBackground = () => {
+      if (bg?.image) {
+        return (
+          <Image
+            source={{ uri: bg.image }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+        );
+      } else if (bg?.isGradient && bg?.gradientColors?.length >= 2) {
+        return (
+          <LinearGradient
+            colors={bg.gradientColors}
+            style={StyleSheet.absoluteFillObject}
+          />
+        );
+      } else {
+        return (
+          <View
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: '#eee' }]}
+          />
+        );
+      }
+    };
+
+    return (
+      <View
+        style={{
+          width: previewWidth,
+          height: previewHeight,
+          borderRadius: 15,
+          overflow: 'hidden',
+          alignSelf: 'center',
+          marginBottom: 20,
+        }}
+      >
+        {renderBackground()}
+
+        {stickers.map((sticker, i) => (
+          <Image
+            key={`modal-sticker-${i}`}
+            source={{ uri: sticker.image }}
+            style={{
+              position: 'absolute',
+              left: (sticker.x || 0) * scale,
+              top: (sticker.y || 0) * scale,
+              width: (sticker.width || 60) * scale,
+              height: (sticker.height || 60) * scale,
+              transform: [{ rotate: `${sticker.rotation || 0}deg` }],
+            }}
+            resizeMode="contain"
+          />
+        ))}
+
+        {texts.map((txt, i) => (
+          <Text
+            key={`modal-text-${i}`}
+            style={{
+              position: 'absolute',
+              left: (txt.x || 0) * scale,
+              top: (txt.y || 0) * scale,
+              color: txt.color || '#000',
+              fontSize: (txt.fontSize || 14) * scale,
+              fontWeight: txt.fontWeight || 'normal',
+              transform: [{ rotate: `${txt.rotation || 0}deg` }],
+            }}
+          >
+            {txt.value}
+          </Text>
+        ))}
+      </View>
     );
   };
 
@@ -189,7 +353,6 @@ const Draft = () => {
         />
       )}
 
-      {/* ✅ Bottom Sheet Modal */}
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={handleCloseModal}
@@ -197,11 +360,8 @@ const Draft = () => {
         style={styles.bottomSheetModal}
       >
         <View style={styles.bottomSheetContent}>
-          {selectedDraft?.preview ? (
-            <Image
-              source={{ uri: selectedDraft.preview }}
-              style={styles.previewImage}
-            />
+          {selectedDraft ? (
+            renderMiniPreview(selectedDraft)
           ) : (
             <View style={styles.noPreview}>
               <Text>No Preview Available</Text>
