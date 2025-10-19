@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
     height: width * 0.9,
     marginBottom: 20,
     backgroundColor: '#f2f2f2',
+    elevation: 5,
   },
 
   button: {

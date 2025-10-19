@@ -106,40 +106,37 @@ const Canvas = () => {
     fetchUserId();
   }, []);
 
-
-  // Move layer up (forward)
   const moveLayerUp = (type, index) => {
     if (type === "sticker") {
       setStickers((prev) => {
-        if (index >= prev.length - 1) return prev; // already top
-        const newStickers = [...prev];
-        [newStickers[index], newStickers[index + 1]] = [newStickers[index + 1], newStickers[index]];
-        return newStickers;
-      });
-    } else if (type === "text") {
-      setTexts((prev) => {
-        if (index >= prev.length - 1) return prev;
-        const newTexts = [...prev];
-        [newTexts[index], newTexts[index + 1]] = [newTexts[index + 1], newTexts[index]];
-        return newTexts;
-      });
-    }
-  };
-
-  // Move layer down (backward)
-  const moveLayerDown = (type, index) => {
-    if (type === "sticker") {
-      setStickers((prev) => {
-        if (index <= 0) return prev; // already bottom
+        if (index <= 0) return prev; // Can't move up if already at top
         const newStickers = [...prev];
         [newStickers[index], newStickers[index - 1]] = [newStickers[index - 1], newStickers[index]];
         return newStickers;
       });
     } else if (type === "text") {
       setTexts((prev) => {
-        if (index <= 0) return prev;
+        if (index <= 0) return prev; // Can't move up if already at top
         const newTexts = [...prev];
         [newTexts[index], newTexts[index - 1]] = [newTexts[index - 1], newTexts[index]];
+        return newTexts;
+      });
+    }
+  };
+
+  const moveLayerDown = (type, index) => {
+    if (type === "sticker") {
+      setStickers((prev) => {
+        if (index >= prev.length - 1) return prev; // Can't move down if already at bottom
+        const newStickers = [...prev];
+        [newStickers[index], newStickers[index + 1]] = [newStickers[index + 1], newStickers[index]];
+        return newStickers;
+      });
+    } else if (type === "text") {
+      setTexts((prev) => {
+        if (index >= prev.length - 1) return prev; // Can't move down if already at bottom
+        const newTexts = [...prev];
+        [newTexts[index], newTexts[index + 1]] = [newTexts[index + 1], newTexts[index]];
         return newTexts;
       });
     }
@@ -473,7 +470,7 @@ const Canvas = () => {
 
     const animatedStyle = useAnimatedStyle(() => ({
       position: "absolute",
-      zIndex: selected ? 999 : index,
+      zIndex: selected ? 999 : (item.zIndex || index), // Use actual zIndex
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
@@ -598,7 +595,7 @@ const Canvas = () => {
 
     const animatedStyle = useAnimatedStyle(() => ({
       position: "absolute",
-      zIndex: selected ? 999 : index,
+      zIndex: selected ? 999 : (item.zIndex || index), // Use actual zIndex
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
@@ -715,26 +712,51 @@ const Canvas = () => {
               borderRadius: 8,
             }}
           >
-            {/* Background */}
-            {background ? (
-              background.type === "gradient" ? (
-                <LinearGradient colors={background.colors} style={styles.backgroundImage} />
-              ) : typeof background === "string" ? (
-                <Image source={{ uri: background }} style={styles.backgroundImage} resizeMode="cover" />
-              ) : (
-                <Image source={background} style={styles.backgroundImage} resizeMode="cover" />
-              )
-            ) : null}
+           // In Canvas.js - Update the rendering section
+            <View
+              style={{
+                width: displayWidth,
+                height: displayHeight,
+                backgroundColor: "transparent",
+                overflow: "hidden",
+                borderRadius: 8,
+              }}
+            >
+              {/* Background */}
+              {background ? (
+                background.type === "gradient" ? (
+                  <LinearGradient colors={background.colors} style={styles.backgroundImage} />
+                ) : typeof background === "string" ? (
+                  <Image source={{ uri: background }} style={styles.backgroundImage} resizeMode="cover" />
+                ) : (
+                  <Image source={background} style={styles.backgroundImage} resizeMode="cover" />
+                )
+              ) : null}
 
-            {/* Stickers */}
-            {stickers.map((item, index) => (
-              <DraggableStickerMemo key={`sticker-${index}`} item={item} index={index} />
-            ))}
-
-            {/* Texts */}
-            {texts.map((item, index) => (
-              <DraggableTextMemo key={`text-${index}`} item={item} index={index} />
-            ))}
+              {/* Render all layers in correct z-order */}
+              {/* Items with lower z-index render first (behind) */}
+              {[...stickers, ...texts]
+                .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+                .map((item, index) => {
+                  if (item.type === "sticker" || item.uri) {
+                    return (
+                      <DraggableStickerMemo
+                        key={`sticker-${index}`}
+                        item={item}
+                        index={stickers.indexOf(item)}
+                      />
+                    );
+                  } else {
+                    return (
+                      <DraggableTextMemo
+                        key={`text-${index}`}
+                        item={item}
+                        index={texts.indexOf(item)}
+                      />
+                    );
+                  }
+                })}
+            </View>
           </View>
         </ViewShot>
       </ScrollView>
@@ -802,8 +824,8 @@ const Canvas = () => {
         texts={texts}
         setStickers={setStickers}
         setTexts={setTexts}
-        moveLayerUp={moveLayerUp}      // new
-        moveLayerDown={moveLayerDown}  // new
+        moveLayerUp={moveLayerUp}
+        moveLayerDown={moveLayerDown}
       />
     </View>
 
