@@ -13,6 +13,7 @@ import Crop from '../components/Create/Crop/Crop';
 import Canvas from '../components/Canvas/Canvas';
 import OtpScreen from '../components/Login/OtpScreen';
 import CategoryTemplates from '../components/Home/CategoryTemplates/CategoryTemplates';
+import WelcomeScreen from '../constants/WelcomeScreen/WelcomeScreen';
 
 const Stack = createStackNavigator();
 
@@ -36,6 +37,7 @@ const StackNavigator = () => {
       <Stack.Screen name="Canvas" component={Canvas} />
       <Stack.Screen name='OTPScreen' component={OtpScreen} />
       <Stack.Screen name="CategoryTemplates" component={CategoryTemplates} />
+      <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} /> 
     </Stack.Navigator>
   );
 };
